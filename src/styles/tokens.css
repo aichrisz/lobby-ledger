@@ -1,1 +1,19 @@
-/* design tokens land in Task 2 */
+:root {
+  --paper: #F6F3EC; --paper-raised: #FDFBF6;
+  --ink: #26241E; --ink-soft: #5C5749; --hairline: #D8D2C4;
+  --accent: #22453B; --accent-ink: #F6F3EC;
+  --wichtig-text: #7A5327; --wichtig-bg: #F3E7D7; --brass: #A8763E;
+  --danger-soft: #B5543B; --focus: #2F6DB0;
+  --font-display: 'Fraunces Variable', Georgia, serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --text-sm: 0.875rem; --text-base: 1rem; --text-lg: 1.125rem; --text-title: 1.375rem;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
+  --radius: 10px; --tap: 44px; --col-max: 680px;
+}
+:root[data-theme='dark'] {
+  --paper: #191813; --paper-raised: #23201A;
+  --ink: #EAE5D8; --ink-soft: #A79F8D; --hairline: #3A362C;
+  --accent: #8FBFAE; --accent-ink: #14211D;
+  --wichtig-text: #E3B878; --wichtig-bg: #3A2F1E; --brass: #D9A45F;
+  --danger-soft: #D08A76; --focus: #7FB0E8;
+}
