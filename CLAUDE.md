@@ -70,3 +70,20 @@ public/        manifest.webmanifest, sw.js, icons
 e2e/           Playwright specs: flows, visual, a11y, print, offline, privacy
 docs/plans/    implementation plans
 ```
+
+## V2 team-handover pilot (approved 2026-07-10)
+
+The spec `docs/superpowers/specs/2026-07-10-team-handover-pilot-design.md` and plan
+`docs/plans/2026-07-10-team-handover-pilot-v2.md` supersede the local-only constraints
+**for the pilot build only** (`pilot.html` → `dist-pilot/`, code under `src/pilot/`,
+`supabase/`). Approved deviations, recorded per the rule above:
+
+- Runtime dependency `@supabase/supabase-js`; dev dependency `supabase` (CLI).
+- Network egress in the pilot build to exactly one origin: the EU Supabase project
+  (config via untracked `.env.local` / CI variables; never committed).
+- Purpose-gated guest data (name/contact) in `guest_cases` only — masked by default,
+  audited reveal, 30-day post-completion retention. Never in free-text task fields.
+- Shared pilot login; operational attribution via staff signatures (Kürzel).
+
+Unchanged for the V1 demo: `index.html` build has no network egress, no PII fields,
+`localStorage` only; the Pages demo must never connect to the pilot database.
