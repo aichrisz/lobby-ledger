@@ -3,6 +3,7 @@ import type { LedgerApp } from '../state'
 import { useRoute } from '../router'
 import { Header } from './Header'
 import { Banner, UndoToast } from './Toasts'
+import { CaptureBar } from './CaptureBar'
 
 export function App({ app }: { app: LedgerApp }) {
   const route = useRoute()
@@ -31,6 +32,7 @@ export function App({ app }: { app: LedgerApp }) {
           ? <h1 class="view-title">Übergabe</h1> /* Task 11 replaces with <BriefView app={app} /> */
           : <h1 class="visually-hidden">Aufgaben</h1> /* Task 10 replaces with <TasksView app={app} /> */}
       </main>
+      {route === 'tasks' && <CaptureBar app={app} />}
       <UndoToast app={app} />
     </div>
   )

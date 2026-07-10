@@ -23,3 +23,18 @@ main { padding: var(--space-4); padding-bottom: 148px; }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: var(--space-3); background: var(--ink); color: var(--paper); padding: var(--space-2) var(--space-4); border-radius: var(--radius); white-space: nowrap; }
 .toast button { min-height: var(--tap); background: none; border: none; color: inherit; font-weight: 700; text-decoration: underline; }
+
+.capture { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: min(100%, var(--col-max)); background: var(--paper-raised); border-top: 1px solid var(--hairline); padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom)); }
+.capture-row { display: flex; gap: var(--space-2); }
+.capture-text { flex: 1; min-height: var(--tap); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 0 var(--space-3); background: var(--paper); }
+.capture-add { min-height: var(--tap); padding: 0 var(--space-4); border: none; border-radius: var(--radius); background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.capture-details { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); align-items: center; }
+.capture-ref { width: 120px; min-height: var(--tap); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 0 var(--space-3); background: var(--paper); }
+.chips { display: flex; gap: var(--space-1); border: none; padding: 0; margin: 0; }
+.chip { display: inline-flex; }
+.chip input { position: absolute; opacity: 0; pointer-events: none; }
+.chip span { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 var(--space-3); border: 1px solid var(--hairline); border-radius: 999px; color: var(--ink-soft); }
+.chip.on span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
+.wichtig-toggle { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--tap); padding: 0 var(--space-3); border: 1px solid var(--hairline); border-radius: 999px; }
+.pii-hint { flex-basis: 100%; margin: 0; color: var(--ink-soft); font-size: var(--text-sm); }
