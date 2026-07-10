@@ -4,6 +4,7 @@ import { useRoute } from '../router'
 import { Header } from './Header'
 import { Banner, UndoToast } from './Toasts'
 import { CaptureBar } from './CaptureBar'
+import { TasksView } from './TasksView'
 
 export function App({ app }: { app: LedgerApp }) {
   const route = useRoute()
@@ -30,7 +31,7 @@ export function App({ app }: { app: LedgerApp }) {
       <main>
         {route === 'brief'
           ? <h1 class="view-title">Übergabe</h1> /* Task 11 replaces with <BriefView app={app} /> */
-          : <h1 class="visually-hidden">Aufgaben</h1> /* Task 10 replaces with <TasksView app={app} /> */}
+          : <TasksView app={app} />}
       </main>
       {route === 'tasks' && <CaptureBar app={app} />}
       <UndoToast app={app} />
