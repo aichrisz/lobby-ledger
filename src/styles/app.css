@@ -58,3 +58,16 @@ main { padding: var(--space-4); padding-bottom: 148px; }
 .row-delete { width: var(--tap); height: var(--tap); flex: none; border: none; background: transparent; color: var(--danger-soft); font-size: var(--text-lg); }
 .done-section { margin-top: var(--space-5); }
 .done-toggle { min-height: var(--tap); border: none; background: transparent; color: var(--ink-soft); font-weight: 600; padding: 0; }
+
+.brief-head { border-bottom: 2px solid var(--ink); padding-bottom: var(--space-3); margin-bottom: var(--space-4); }
+.brief-sub { margin: 0; font-weight: 600; }
+.brief-counts { margin: var(--space-1) 0 0; color: var(--ink-soft); font-size: var(--text-sm); }
+.brief-clear { font-family: var(--font-display); font-size: var(--text-lg); color: var(--ink-soft); }
+.brief-section { margin-bottom: var(--space-5); }
+.brief-section h2 { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 550; margin: 0 0 var(--space-2); border-bottom: 1px solid var(--hairline); padding-bottom: var(--space-1); }
+.brief-section ul { list-style: none; margin: 0; padding: 0; }
+.brief-section li { display: flex; gap: var(--space-2); padding: var(--space-2) 0; overflow-wrap: anywhere; }
+.brief-section li .mark { flex: none; width: 1em; text-align: center; }
+.brief-section li.wichtig { color: var(--wichtig-text); font-weight: 600; }
+.brief-section li .age { color: var(--ink-soft); font-style: normal; font-size: var(--text-sm); align-self: center; }
+.brief-done { color: var(--ink-soft); }
