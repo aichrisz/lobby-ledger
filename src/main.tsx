@@ -4,5 +4,7 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
 import { App } from './app/components/App'
+import { createLedgerApp } from './app/state'
 
-render(<App />, document.getElementById('app')!)
+const app = createLedgerApp(localStorage)
+render(<App app={app} />, document.getElementById('app')!)

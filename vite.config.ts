@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [preact()],
   test: {
     environment: 'happy-dom',
+    globals: true,
     include: ['src/**/*.test.{ts,tsx}'],
   },
 })
