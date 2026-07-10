@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'vitest'
-import { render, screen } from '@testing-library/preact'
+import { describe, expect, test, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/preact'
 import { fakeStorage } from '../../test/fake-storage'
 import { createLedgerApp } from '../state'
 import { BriefView } from './BriefView'
@@ -38,5 +38,39 @@ describe('BriefView', () => {
     app.addTask({ text: 'Wasserkocher defekt', ref: '204', priority: 'wichtig' })
     render(<BriefView app={app} />)
     expect(screen.getByText('Wichtig:')).toBeTruthy()
+  })
+
+  test('copy button confirms with "Kopiert ✓"', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: () => Promise.resolve() }, configurable: true,
+    })
+    const app = mkApp()
+    app.addTask({ text: 'Wasserkocher defekt', ref: '204' })
+    render(<BriefView app={app} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Kopieren' }))
+    await waitFor(() => expect(screen.getByText('Kopiert ✓')).toBeTruthy())
+  })
+
+  test('clipboard rejection opens the manual-copy fallback with the brief text', async () => {
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: () => Promise.reject(new Error('denied')) }, configurable: true,
+    })
+    const app = mkApp()
+    app.addTask({ text: 'Wasserkocher defekt', ref: '204' })
+    render(<BriefView app={app} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Kopieren' }))
+    await waitFor(() => {
+      const box = screen.getByRole('dialog', { name: 'Manuell kopieren' })
+      expect((box.querySelector('textarea') as HTMLTextAreaElement).value).toContain('ÜBERGABE')
+    })
+  })
+
+  test('print button calls window.print', () => {
+    window.print ??= () => {} // happy-dom does not implement print
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+    render(<BriefView app={mkApp()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Drucken' }))
+    expect(print).toHaveBeenCalledOnce()
+    print.mockRestore()
   })
 })

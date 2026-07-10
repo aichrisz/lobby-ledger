@@ -1,10 +1,22 @@
+import { useSignal } from '@preact/signals'
+import { useEffect } from 'preact/hooks'
 import type { LedgerApp } from '../state'
-import { buildBrief, carriedOverLabel, formatDateShort, formatTimeShort } from '../../domain/brief'
+import {
+  briefFilename, buildBrief, carriedOverLabel, formatBriefText, formatDateShort, formatTimeShort,
+} from '../../domain/brief'
 import { DEPARTMENT_LABELS, SHIFT_LABELS } from '../../domain/labels'
+import { copyText, downloadText } from '../export'
 
 export function BriefView({ app }: { app: LedgerApp }) {
   const now = app.now()
   const brief = buildBrief(app.tasks.value, app.shift.value, now)
+  const copied = useSignal<'idle' | 'ok' | 'fail'>('idle')
+  const text = formatBriefText(brief)
+  useEffect(() => {
+    if (copied.value !== 'ok') return
+    const timer = setTimeout(() => (copied.value = 'idle'), 2000)
+    return () => clearTimeout(timer)
+  }, [copied.value])
   return (
     <article class="brief">
       <header class="brief-head">
@@ -16,6 +28,14 @@ export function BriefView({ app }: { app: LedgerApp }) {
         <p class="brief-counts nums">
           {brief.counts.open} offen · {brief.counts.wichtig} wichtig · {brief.counts.doneThisShift} erledigt diese Schicht
         </p>
+        <div class="brief-actions no-print">
+          <button onClick={() => window.print()}>Drucken</button>
+          <button aria-live="polite"
+            onClick={async () => (copied.value = (await copyText(text)) ? 'ok' : 'fail')}>
+            {copied.value === 'ok' ? 'Kopiert ✓' : 'Kopieren'}
+          </button>
+          <button onClick={() => downloadText(briefFilename(brief), text)}>Als .txt</button>
+        </div>
       </header>
       {brief.sections.length === 0 ? (
         <p class="brief-clear">Keine offenen Aufgaben. Gute Übergabe!</p>
@@ -49,6 +69,17 @@ export function BriefView({ app }: { app: LedgerApp }) {
           </ul>
         </section>
       )}
+      {copied.value === 'fail' && <CopyFallback text={text} onClose={() => (copied.value = 'idle')} />}
     </article>
+  )
+}
+
+function CopyFallback({ text, onClose }: { text: string; onClose: () => void }) {
+  return (
+    <div class="copy-fallback no-print" role="dialog" aria-label="Manuell kopieren">
+      <p>Manuell kopieren (gedrückt halten und kopieren):</p>
+      <textarea readOnly rows={8} value={text} onFocus={(e) => e.currentTarget.select()} />
+      <button onClick={onClose}>Schließen</button>
+    </div>
   )
 }
