@@ -1,0 +1,18 @@
+@page { size: A4; margin: 15mm; }
+
+@media print {
+  /* Force paper-true light values regardless of active theme */
+  :root, :root[data-theme='dark'] {
+    --paper: #fff; --paper-raised: #fff;
+    --ink: #000; --ink-soft: #333; --hairline: #999;
+    --accent: #000; --accent-ink: #fff;
+    --wichtig-text: #000; --wichtig-bg: #fff; --brass: #000;
+  }
+  body { background: #fff !important; color: #000 !important; font-size: 11pt; }
+  .no-print, .header, .capture, .toast, .banner { display: none !important; }
+  .app { max-width: none; }
+  main { padding: 0; }
+  .brief-section { break-inside: avoid; }
+  .brief-head { border-bottom-width: 1pt; }
+  .brief-section li.wichtig { font-weight: 700; }
+}

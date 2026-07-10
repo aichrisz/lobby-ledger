@@ -3,6 +3,7 @@ import '@fontsource-variable/fraunces/index.css'
 import './styles/tokens.css'
 import './styles/base.css'
 import './styles/app.css'
+import './styles/print.css'
 import { App } from './app/components/App'
 import { createLedgerApp } from './app/state'
 
