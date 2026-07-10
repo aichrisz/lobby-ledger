@@ -3,7 +3,7 @@ import type { LedgerApp } from '../state'
 import { useRoute } from '../router'
 import { themeFor } from '../theme'
 import { Header } from './Header'
-import { Banner, UndoToast } from './Toasts'
+import { Banner, UndoToast, UpdateBar } from './Toasts'
 import { CaptureBar } from './CaptureBar'
 import { TasksView } from './TasksView'
 import { BriefView } from './BriefView'
@@ -45,6 +45,7 @@ export function App({ app }: { app: LedgerApp }) {
       {app.saveFailed.value && (
         <Banner tone="warn">Speichern fehlgeschlagen. Letzte Änderung ist evtl. nicht gesichert.</Banner>
       )}
+      <UpdateBar />
       <main>
         {route === 'brief'
           ? <BriefView app={app} />

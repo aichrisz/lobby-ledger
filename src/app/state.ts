@@ -2,7 +2,7 @@ import { signal, type Signal } from '@preact/signals'
 import type { NewTaskInput, Shift, Status, Task } from '../domain/task'
 import { createTask } from '../domain/task'
 import { resolveShift, type ShiftOverride } from '../domain/shift'
-import { CURRENT_SCHEMA, loadStore, saveStore, type StorageLike } from '../storage/store'
+import { CURRENT_SCHEMA, loadStore, saveStore, wipeStore, type StorageLike } from '../storage/store'
 
 export interface LedgerApp {
   tasks: Signal<Task[]>
@@ -17,6 +17,7 @@ export interface LedgerApp {
   undoRemove(): void
   setShift(shift: Shift): void
   refreshShift(): void
+  wipe(): void
 }
 
 export function createLedgerApp(storage: StorageLike, now: () => Date = () => new Date()): LedgerApp {
@@ -71,6 +72,15 @@ export function createLedgerApp(storage: StorageLike, now: () => Date = () => ne
     },
     refreshShift() {
       shift.value = resolveShift(now(), override)
+    },
+    wipe() {
+      wipeStore(storage)
+      override = null
+      tasks.value = []
+      shift.value = resolveShift(now(), null)
+      lastDeleted.value = null
+      recovered.value = false
+      saveFailed.value = false
     },
   }
 }

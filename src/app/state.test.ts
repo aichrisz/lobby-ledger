@@ -68,4 +68,13 @@ describe('createLedgerApp', () => {
     app.addTask({ text: 'irgendwas' })
     expect(app.saveFailed.value).toBe(true)
   })
+  test('wipe clears tasks, transient deletion state, and persisted data', () => {
+    const { app, storage } = mkApp()
+    const task = app.addTask({ text: 'Lampe prüfen' })!
+    app.removeTask(task.id)
+    app.wipe()
+    expect(app.tasks.value).toEqual([])
+    expect(app.lastDeleted.value).toBeNull()
+    expect(storage.dump()[STORAGE_KEY]).toBeUndefined()
+  })
 })

@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks'
 import type { ComponentChildren } from 'preact'
 import type { LedgerApp } from '../state'
+import { updateReady } from '../sw-register'
 
 export function Banner({ children, tone = 'info', onClose }: {
   children: ComponentChildren
@@ -11,6 +12,17 @@ export function Banner({ children, tone = 'info', onClose }: {
     <div class={`banner banner-${tone} no-print`} role="status">
       <p>{children}</p>
       {onClose && <button onClick={onClose} aria-label="Hinweis schließen">OK</button>}
+    </div>
+  )
+}
+
+export function UpdateBar() {
+  const apply = updateReady.value
+  if (!apply) return null
+  return (
+    <div class="banner no-print" role="status">
+      <p>Neue Version verfügbar.</p>
+      <button onClick={apply}>Aktualisieren</button>
     </div>
   )
 }
