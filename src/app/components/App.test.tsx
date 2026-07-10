@@ -36,4 +36,12 @@ describe('App shell', () => {
     render(<App app={createLedgerApp(storage, at(9))} />)
     expect(screen.getByText(/beschädigt/)).toBeTruthy()
   })
+  test('Nacht shift switches the document to the dark theme', () => {
+    render(<App app={createLedgerApp(fakeStorage(), at(23))} />)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+  test('day shift uses the light theme', () => {
+    render(<App app={createLedgerApp(fakeStorage(), at(9))} />)
+    expect(document.documentElement.dataset.theme).toBe('light')
+  })
 })

@@ -1,6 +1,7 @@
 import { useEffect } from 'preact/hooks'
 import type { LedgerApp } from '../state'
 import { useRoute } from '../router'
+import { themeFor } from '../theme'
 import { Header } from './Header'
 import { Banner, UndoToast } from './Toasts'
 import { CaptureBar } from './CaptureBar'
@@ -16,6 +17,21 @@ export function App({ app }: { app: LedgerApp }) {
     return () => {
       document.removeEventListener('visibilitychange', refresh)
       clearInterval(timer)
+    }
+  }, [app])
+  useEffect(() => {
+    const media = matchMedia('(prefers-color-scheme: dark)')
+    const apply = () => {
+      const theme = themeFor(app.shift.value, media.matches)
+      document.documentElement.dataset.theme = theme
+      document.querySelector('meta[name="theme-color"]')
+        ?.setAttribute('content', theme === 'dark' ? '#191813' : '#F6F3EC')
+    }
+    media.addEventListener('change', apply)
+    const unsubscribe = app.shift.subscribe(apply) // fires immediately with current value
+    return () => {
+      media.removeEventListener('change', apply)
+      unsubscribe()
     }
   }, [app])
   return (
