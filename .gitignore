@@ -7,3 +7,5 @@ playwright-report/
 !.env.example
 dist-pilot/
 supabase/.temp/
+.vercel
+.env*
