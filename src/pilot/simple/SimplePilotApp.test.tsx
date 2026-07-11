@@ -120,6 +120,26 @@ describe('SimplePilotApp', () => {
     vi.unstubAllGlobals()
   })
 
+  test('restores the prior document theme state when unmounted', () => {
+    const root = document.documentElement
+
+    try {
+      root.dataset.theme = 'dark'
+      const existingTheme = render(<SimplePilotApp deps={deps(api(), fakeStorage({ 'lobby-ledger:simple-theme': 'light' }))} />)
+      expect(root.dataset.theme).toBe('light')
+      existingTheme.unmount()
+      expect(root.dataset.theme).toBe('dark')
+
+      delete root.dataset.theme
+      const missingTheme = render(<SimplePilotApp deps={deps(api(), fakeStorage({ 'lobby-ledger:simple-theme': 'dark' }))} />)
+      expect(root.dataset.theme).toBe('dark')
+      missingTheme.unmount()
+      expect(root.dataset.theme).toBeUndefined()
+    } finally {
+      delete root.dataset.theme
+    }
+  })
+
   test('loads and captures the selected shift with V1 task details', async () => {
     const ledgerApi = api()
     render(<SimplePilotApp deps={deps(ledgerApi)} />)

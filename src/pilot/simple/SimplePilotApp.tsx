@@ -70,11 +70,19 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const [showDone, setShowDone] = useState(false)
   const [message, setMessage] = useState('')
   const loadSequence = useRef(0)
+  const priorDocumentTheme = useRef<string | null | undefined>(undefined)
   const validInitials = /^[A-Z]{2,4}$/.test(initials)
 
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      document.documentElement.dataset.theme = resolveTheme(themePreference, systemDark)
+    if (typeof document === 'undefined') return
+    const root = document.documentElement
+    if (priorDocumentTheme.current === undefined) {
+      priorDocumentTheme.current = root.getAttribute('data-theme')
+    }
+    root.dataset.theme = resolveTheme(themePreference, systemDark)
+    return () => {
+      if (priorDocumentTheme.current === null) delete root.dataset.theme
+      else if (priorDocumentTheme.current !== undefined) root.dataset.theme = priorDocumentTheme.current
     }
   }, [systemDark, themePreference])
 
