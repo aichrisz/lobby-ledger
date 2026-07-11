@@ -111,7 +111,7 @@
 .signin .signin-form button { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
 
 .signin-meta { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
-.theme-toggle { min-height: 34px; flex: none; border: 1px solid var(--hairline); border-radius: 999px; background: transparent; color: var(--ink-soft); padding: 0 10px; font-size: .75rem; font-weight: 700; }
+.theme-toggle { width: 38px; min-height: 34px; flex: none; display: inline-grid; place-items: center; border: 1px solid var(--hairline); border-radius: 999px; background: transparent; color: var(--ink-soft); padding: 0; font-size: 1.1rem; line-height: 1; }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 :root[data-theme='dark'] .signin { background: radial-gradient(circle at 88% 5%, #28463e 0%, transparent 34%), #161612; }
 :root[data-theme='dark'] .signin-sheet { border-color: #494439; border-top-color: var(--brass); box-shadow: 0 22px 54px rgb(0 0 0 / .42); }

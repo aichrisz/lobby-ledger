@@ -14,10 +14,12 @@ export function ThemeToggle() {
     <button
       class="theme-toggle"
       type="button"
+      aria-label={dark ? 'Helles Layout aktivieren' : 'Dunkles Layout aktivieren'}
+      title={dark ? 'Helles Layout' : 'Dunkles Layout'}
       aria-pressed={dark}
       onClick={() => setDark(value => !value)}
     >
-      {dark ? 'Helles Layout' : 'Dunkles Layout'}
+      <span aria-hidden="true">{dark ? '☼' : '◐'}</span>
     </button>
   )
 }
