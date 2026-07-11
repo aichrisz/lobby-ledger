@@ -1,7 +1,7 @@
-import type { ApiRequest, ApiResponse } from './_lib/http'
-import { createTask, deleteTask, listTasks, updateTaskStatus } from './_lib/ledger-store'
-import { SESSION_COOKIE, verifySessionToken } from './_lib/security'
-import { parseCreateTask, parseInitials, parseLedgerDate, parseTaskPatch } from './_lib/validation'
+import type { ApiRequest, ApiResponse } from './_lib/http.js'
+import { createTask, deleteTask, listTasks, updateTaskStatus } from './_lib/ledger-store.js'
+import { SESSION_COOKIE, verifySessionToken } from './_lib/security.js'
+import { parseCreateTask, parseInitials, parseLedgerDate, parseTaskPatch } from './_lib/validation.js'
 
 function header(request: ApiRequest, name: string): string {
   const value = request.headers[name]

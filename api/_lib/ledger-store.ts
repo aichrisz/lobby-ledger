@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { CreateTaskInput, TaskPatchInput } from './validation'
+import type { CreateTaskInput, TaskPatchInput } from './validation.js'
 
 const ROUTE = {
   source_shift: 'frueh',

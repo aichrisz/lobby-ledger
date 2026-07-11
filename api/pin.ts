@@ -1,5 +1,5 @@
-import type { ApiRequest, ApiResponse } from './_lib/http'
-import { createSessionToken, pinMatches, sessionCookie } from './_lib/security'
+import type { ApiRequest, ApiResponse } from './_lib/http.js'
+import { createSessionToken, pinMatches, sessionCookie } from './_lib/security.js'
 
 const SESSION_SECONDS = 8 * 60 * 60
 
