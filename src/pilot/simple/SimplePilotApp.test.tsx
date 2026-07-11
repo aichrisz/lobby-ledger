@@ -47,6 +47,18 @@ describe('SimplePilotApp', () => {
     expect(screen.getByRole('button', { name: 'Als .txt' })).toBeTruthy()
   })
 
+  test('renders date navigation controls with hidden SVG chevrons', async () => {
+    const ledgerApi = api()
+    render(<SimplePilotApp deps={deps(ledgerApi)} />)
+    fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
+    await screen.findByRole('heading', { name: 'Aufgaben' })
+
+    for (const label of ['Vorheriger Tag', 'Nächster Tag']) {
+      expect(screen.getByRole('button', { name: label }).querySelector('svg[aria-hidden="true"]')).toBeTruthy()
+    }
+  })
+
   test('loads and captures the selected shift with V1 task details', async () => {
     const ledgerApi = api()
     render(<SimplePilotApp deps={deps(ledgerApi)} />)

@@ -167,10 +167,14 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
       </fieldset>
       <div class="ledger-controls">
         <div class="date-control">
-          <button type="button" aria-label="Vorheriger Tag" onClick={() => setDate(moveDate(date, -1))}>‹</button>
           <label for="service-date">Datum</label>
+          <button type="button" aria-label="Vorheriger Tag" onClick={() => setDate(moveDate(date, -1))}>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></svg>
+          </button>
           <input id="service-date" type="date" value={date} onInput={(event) => setDate(event.currentTarget.value)} />
-          <button type="button" aria-label="Nächster Tag" onClick={() => setDate(moveDate(date, 1))}>›</button>
+          <button type="button" aria-label="Nächster Tag" onClick={() => setDate(moveDate(date, 1))}>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></svg>
+          </button>
         </div>
         <label class="initials-field" for="initials">Kürzel
           <input id="initials" value={initials} minlength={2} maxlength={4} autocomplete="off" placeholder="AB"

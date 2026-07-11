@@ -18,9 +18,13 @@
 .shift-option.on span { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .shift-option input:focus-visible + span, .department-chips input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: -2px; }
 .ledger-controls { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; justify-content: space-between; margin-top: var(--space-3); }
-.date-control { display: grid; grid-template-columns: var(--tap) auto var(--tap); gap: var(--space-1); align-items: end; }
-.date-control label { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--ink-soft); }
-.date-control input { min-width: 148px; }
+.date-control { display: grid; grid-template-columns: var(--tap) minmax(0, 1fr) var(--tap); grid-template-rows: auto var(--tap); gap: var(--space-1); width: min(100%, 320px); min-width: 0; }
+.date-control label { grid-column: 1 / -1; grid-row: 1; font-size: var(--text-sm); color: var(--ink-soft); }
+.date-control button { display: grid; place-items: center; grid-row: 2; width: var(--tap); min-height: var(--tap); padding: 0; }
+.date-control button:first-of-type { grid-column: 1; }
+.date-control input { grid-column: 2; grid-row: 2; width: 100%; min-width: 0; }
+.date-control button:last-of-type { grid-column: 3; }
+.date-control svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .initials-field { display: grid; gap: var(--space-1); color: var(--ink-soft); font-size: var(--text-sm); }
 .initials-field input { width: 88px; color: var(--ink); font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
 .simple-ledger main { width: min(100%, var(--col-max)); margin: 0 auto; padding: var(--space-5) var(--space-4) 190px; }
