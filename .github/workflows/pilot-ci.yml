@@ -1,0 +1,39 @@
+name: pilot-ci
+on:
+  pull_request:
+    paths:
+      - 'src/pilot/**'
+      - 'supabase/**'
+      - 'e2e/pilot/**'
+      - 'pilot.html'
+      - 'vite.pilot.config.ts'
+      - 'playwright.pilot.config.ts'
+      - 'scripts/check-pilot-security.mjs'
+      - '.github/workflows/pilot-ci.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with: { version: latest }
+      - name: Start local Supabase and apply migrations
+        run: supabase start && supabase db reset
+      - name: Export local keys and write pilot env
+        run: |
+          eval "$(supabase status -o env | sed 's/^/export /')"
+          echo "ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "API_URL=$API_URL" >> "$GITHUB_ENV"
+          printf 'VITE_SUPABASE_URL=%s\nVITE_SUPABASE_ANON_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env.local
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:db
+      - run: npx playwright install chromium
+      - run: npm run test:e2e:pilot
+        env: { VITE_SUPABASE_URL: '${{ env.API_URL }}' }
+      - name: Demo isolation + security gate
+        run: npm run build && npm run build:pilot && npm run check:security
