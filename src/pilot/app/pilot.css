@@ -38,3 +38,7 @@
 .pilot .capture-details .chip:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
 .task-row button, .pilot .capture > button { min-height: var(--tap); padding: 0 var(--space-3); }
 .capture input[type='text'], .capture input:not([type]) { width: 100%; min-height: var(--tap); font-size: var(--text-base); }
+.review { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--hairline); }
+.review button, .inbox button { min-height: var(--tap); padding: 0 var(--space-3); }
+.publish-stamp { color: var(--accent); font-variant-numeric: tabular-nums; }
+.inbox .task-row > a { flex: 1 1 16rem; min-height: var(--tap); display: inline-flex; align-items: center; color: var(--ink); }

@@ -6,6 +6,7 @@ import { SignIn } from './SignIn'
 import { SignatureBar, loadStoredSignature } from './SignatureBar'
 import { ShiftBoard } from './ShiftBoard'
 import { HandoverEditor } from './HandoverEditor'
+import { Inbox } from './Inbox'
 
 export interface PilotDeps {
   session: PilotSession
@@ -51,6 +52,7 @@ export function PilotApp({ deps }: { deps: PilotDeps }) {
       <main>
         {route.view === 'board' && <ShiftBoard api={deps.api} signature={signature} now={deps.now} />}
         {route.view === 'handover' && <HandoverEditor api={deps.api} signature={signature} handoverId={route.id} />}
+        {route.view === 'inbox' && <Inbox api={deps.api} signature={signature} now={deps.now} />}
       </main>
     </div>
   )
