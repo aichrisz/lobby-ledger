@@ -32,6 +32,8 @@ alter table audit_events enable row level security;
 alter table retention_runs enable row level security;
 -- No direct client access at all; reads go through admin-gated RPCs (0005/0006).
 revoke all on audit_events, retention_runs from authenticated, anon;
+-- Local DB tests use the service role only to inspect synthetic audit/retention fixtures.
+grant select on audit_events, retention_runs to service_role;
 
 -- Single audit write path for every RPC (same transaction as the mutation).
 create function write_audit(

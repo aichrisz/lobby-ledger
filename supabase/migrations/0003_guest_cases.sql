@@ -37,6 +37,8 @@ revoke select on guest_cases from authenticated;
 grant select (id, organization_id, room_reference, purpose, purpose_note,
               expires_at, deleted_at, created_by_signature_id, created_at, updated_at)
   on guest_cases to authenticated;
+-- Local DB tests use the service role only to arrange and inspect synthetic fixtures.
+grant select, update on guest_cases to service_role;
 
 -- Masked view: what the UI shows by default. Owned by postgres (bypasses RLS),
 -- therefore it must filter by org itself.
