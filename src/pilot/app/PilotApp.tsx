@@ -9,6 +9,7 @@ import { HandoverEditor } from './HandoverEditor'
 import { Inbox } from './Inbox'
 import { Archive } from './Archive'
 import { AdminPanel } from './AdminPanel'
+import { ThemeToggle } from './ThemeToggle'
 
 export interface PilotDeps {
   session: PilotSession
@@ -45,7 +46,7 @@ export function PilotApp({ deps }: { deps: PilotDeps }) {
   return (
     <div class="app pilot">
       <header class="header">
-        <span class="wordmark">Lobby Ledger · Team</span>
+        <div class="header-row"><span class="wordmark">Lobby Ledger · Team</span><ThemeToggle /></div>
         <nav aria-label="Bereiche">
           <a href="#/">Übersicht</a> <a href="#/inbox">Eingang</a> <a href="#/archive">Archiv</a> <a href="#/admin">Verwaltung</a>
         </nav>

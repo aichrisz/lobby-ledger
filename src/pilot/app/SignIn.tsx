@@ -1,5 +1,6 @@
 import { useState } from 'preact/hooks'
 import type { PilotSession } from '../api/session'
+import { ThemeToggle } from './ThemeToggle'
 
 export function SignIn({ session }: { session: PilotSession }) {
   const [error, setError] = useState('')
@@ -17,7 +18,7 @@ export function SignIn({ session }: { session: PilotSession }) {
     <main class="signin">
       <section class="signin-sheet" aria-labelledby="signin-title">
         <header class="signin-intro">
-          <p class="eyebrow">Lobby Ledger · Übergabe</p>
+          <div class="signin-meta"><p class="eyebrow">Lobby Ledger · Übergabe</p><ThemeToggle /></div>
           <h1 id="signin-title">Team-Anmeldung</h1>
           <p class="signin-lede">Für die nächste Schicht: ein klarer Überblick, sauber übergeben.</p>
         </header>
