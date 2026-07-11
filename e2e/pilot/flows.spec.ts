@@ -1,65 +1,72 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, unlock } from './fixtures'
 
-async function signIn(page: Page) {
-  await page.goto('/pilot.html')
-  await page.getByLabel('E-Mail').fill('pilot@example.test')
-  await page.getByLabel('Passwort').fill('local-dev-only-password')
-  await page.getByRole('button', { name: 'Anmelden' }).click()
-  await expect(page.getByText('Übergaben')).toBeVisible()
-}
-
-async function actAs(page: Page, shortCode: string) {
-  const bar = page.locator('.signature-bar')
-  if (await bar.getByRole('button', { name: 'Wechseln' }).isVisible()) {
-    await bar.getByRole('button', { name: 'Wechseln' }).click()
-  }
-  await page.getByRole('button', { name: new RegExp(`^${shortCode} ·`) }).click()
-}
-
-async function isolateProjectDate(page: Page, projectName: string) {
-  if (projectName === 'desktop') {
-    await page.getByRole('button', { name: 'Nächster Tag' }).click()
-  }
-}
-
-function shiftColumn(page: Page, name: 'Früh' | 'Spät' | 'Nacht') {
-  return page.locator('.shift-col').filter({
-    has: page.getByRole('heading', { name, exact: true }),
-  })
-}
-
-test('publish → acknowledge → carry-over with two signatures', async ({ page }, testInfo) => {
-  await signIn(page)
-  await actAs(page, 'AB')
-  await isolateProjectDate(page, testInfo.project.name)
-
-  // create a draft for today's Früh and capture a task
-  await shiftColumn(page, 'Früh').getByRole('button', { name: 'Übergabe beginnen' }).click()
-  await page.getByPlaceholder('Neue Aufgabe … (keine Gastnamen)').fill('Wasserkocher defekt, Technik informiert')
-  await page.getByRole('button', { name: 'Erfassen' }).click()
-  await expect(page.getByText('Wasserkocher defekt, Technik informiert')).toBeVisible()
-
-  // publish
-  await page.getByRole('button', { name: 'Übergabe veröffentlichen' }).click()
-  await expect(page.getByRole('heading', { name: 'Übergabe · Veröffentlicht' })).toBeVisible()
-
-  // switch signature and acknowledge from the target shift's inbox
-  await actAs(page, 'LK')
-  await page.getByRole('link', { name: 'Eingang' }).click()
-  // inbox shows the current Berlin shift; navigate via board link if the published
-  // handover targets a different shift than "now" — the board is deterministic:
-  await page.getByRole('link', { name: 'Übersicht' }).click()
-  await isolateProjectDate(page, testInfo.project.name)
-  await page.getByRole('link', { name: /→ Spät/ }).click()
-  await expect(page.getByText('Übergabe · Veröffentlicht')).toBeVisible()
+test('unlocks the private Simple Pilot with the E2E PIN fixture', async ({ page }) => {
+  await unlock(page)
+  await expect(page.getByText('0 offen')).toBeVisible()
 })
 
-test('contact data in task text is blocked with the guest-case hint', async ({ page }, testInfo) => {
-  await signIn(page)
-  await actAs(page, 'AB')
-  await isolateProjectDate(page, testInfo.project.name)
-  await shiftColumn(page, 'Spät').getByRole('button', { name: 'Übergabe beginnen' }).click()
-  await page.getByPlaceholder('Neue Aufgabe … (keine Gastnamen)').fill('Rückruf +49 171 2345678')
+test('keeps a detailed task in its selected date and shift through status and deletion', async ({ page }) => {
+  await unlock(page)
+  const date = page.getByLabel('Datum')
+  const today = await date.inputValue()
+
+  await page.getByLabel('Kürzel').fill('ab')
+  await page.locator('.shift-option').filter({ hasText: 'Spät' }).click()
+  await page.getByLabel('Neue Aufgabe, keine Gastnamen').fill('Minibar prüfen')
+  await page.getByLabel('Zimmer oder Referenz').fill('204')
+  await page.getByText('Housekeeping', { exact: true }).click()
+  await page.locator('.priority-toggle').click()
   await page.getByRole('button', { name: 'Erfassen' }).click()
-  await expect(page.getByText('Kontaktdaten bitte nicht im Text – Gastfall mit Zweck verwenden.')).toBeVisible()
+
+  const task = page.getByRole('listitem').filter({ hasText: 'Minibar prüfen' })
+  await expect(task).toContainText('204')
+  await expect(task).toContainText('Housekeeping · Wichtig')
+
+  await page.getByRole('button', { name: 'Vorheriger Tag' }).click()
+  await expect(date).not.toHaveValue(today)
+  await expect(page.getByText('Noch keine Aufgaben für diesen Tag.')).toBeVisible()
+  await page.getByRole('button', { name: 'Nächster Tag' }).click()
+  await expect(date).toHaveValue(today)
+  await expect(task).toBeVisible()
+
+  await page.locator('.shift-option').filter({ hasText: 'Nacht' }).click()
+  await expect(page.getByText('Noch keine Aufgaben für diesen Tag.')).toBeVisible()
+  await page.locator('.shift-option').filter({ hasText: 'Spät' }).click()
+  await expect(task).toBeVisible()
+
+  await task.getByRole('button', { name: 'Als erledigt markieren' }).click()
+  await expect(page.getByRole('button', { name: 'Erledigt (1)' })).toBeVisible()
+  await page.getByRole('button', { name: 'Erledigt (1)' }).click()
+  await expect(page.getByRole('button', { name: 'Aufgabe löschen' })).toBeVisible()
+  await page.getByRole('button', { name: 'Aufgabe löschen' }).click()
+  await expect(page.getByText('Noch keine Aufgaben für diesen Tag.')).toBeVisible()
+})
+
+test('renders the browser mock contact-data error path from task capture', async ({ page }) => {
+  await unlock(page)
+  await page.getByLabel('Kürzel').fill('AB')
+  await page.getByLabel('Neue Aufgabe, keine Gastnamen').fill('Rückruf mail@example.test')
+  await page.getByRole('button', { name: 'Erfassen' }).click()
+
+  await expect(page.getByRole('status')).toHaveText('Kontaktdaten gehören nicht in Aufgaben')
+  await expect(page.getByText('Noch keine Aufgaben für diesen Tag.')).toBeVisible()
+})
+
+test('uses the system theme until an explicit override is selected', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await unlock(page)
+
+  const control = page.getByRole('button', { name: /Darstellung:/ })
+  await expect(control).toHaveText('Darstellung: System')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+
+  await control.click()
+  await expect(control).toHaveText('Darstellung: Dunkel')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+  await control.click()
+  await expect(control).toHaveText('Darstellung: Hell')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
+  await control.click()
+  await expect(control).toHaveText('Darstellung: System')
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
 })

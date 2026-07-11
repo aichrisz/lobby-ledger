@@ -1,54 +1,45 @@
-import { expect, test } from '@playwright/test'
+import { type Page } from '@playwright/test'
+import { expect, test, unlock } from './fixtures'
 
-test('network egress is limited to the app origin and the configured Supabase origin', async ({ page, baseURL }) => {
-  const allowed = new Set([
-    new URL(baseURL!).origin,
-    new URL(process.env.VITE_SUPABASE_URL ?? 'http://127.0.0.1:54321').origin,
-  ])
+async function captureCompleteAndDelete(page: Page) {
+  await page.getByLabel('Kürzel').fill('AB')
+  await page.getByLabel('Neue Aufgabe, keine Gastnamen').fill('Minibar prüfen')
+  await page.getByRole('button', { name: 'Erfassen' }).click()
+
+  const task = page.getByRole('listitem').filter({ hasText: 'Minibar prüfen' })
+  await task.getByRole('button', { name: 'Als erledigt markieren' }).click()
+  await page.getByRole('button', { name: 'Erledigt (1)' }).click()
+  await page.getByRole('button', { name: 'Aufgabe löschen' }).click()
+  await expect(page.getByText('Noch keine Aufgaben für diesen Tag.')).toBeVisible()
+}
+
+test('unlocked Simple Pilot makes no cross-origin requests through capture, completion, and deletion', async ({ page, baseURL }) => {
+  const appOrigin = new URL(baseURL!).origin
   const offending: string[] = []
-  page.on('request', (req) => {
-    const origin = new URL(req.url()).origin
-    if (!allowed.has(origin)) offending.push(req.url())
+  page.on('request', (request) => {
+    if (new URL(request.url()).origin !== appOrigin) offending.push(request.url())
   })
-  await page.goto('/pilot.html')
-  await page.getByLabel('E-Mail').fill('pilot@example.test')
-  await page.getByLabel('Passwort').fill('local-dev-only-password')
-  await page.getByRole('button', { name: 'Anmelden' }).click()
-  await expect(page.getByText('Übergaben')).toBeVisible()
+
+  await unlock(page)
+  await captureCompleteAndDelete(page)
   expect(offending).toEqual([])
 })
 
-test('pilot page is noindex and carries the Supabase-scoped CSP', async ({ page }) => {
+test('browser protocol mock does not handle a non-app-origin API URL', async ({ page, pilotMockRequests }) => {
   await page.goto('/pilot.html')
+  await page.evaluate(async () => {
+    await fetch('http://localhost:4173/api/pin', { method: 'POST', body: JSON.stringify({ pin: 'e2e-pin' }) }).catch(() => undefined)
+  })
+
+  expect(pilotMockRequests).toEqual([])
+})
+
+test('pilot page remains noindex with a same-origin CSP', async ({ page }) => {
+  await page.goto('/pilot.html')
+
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/)
   const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content')
   expect(csp).toContain("default-src 'self'")
-  expect(csp).not.toContain('%SUPABASE_ORIGIN%') // placeholder must be substituted at build
-})
-
-test('guest contact values never render without the audited reveal action', async ({ page }, testInfo) => {
-  await page.goto('/pilot.html')
-  await page.getByLabel('E-Mail').fill('pilot@example.test')
-  await page.getByLabel('Passwort').fill('local-dev-only-password')
-  await page.getByRole('button', { name: 'Anmelden' }).click()
-  await page.getByRole('button', { name: /^AB ·/ }).click()
-  if (testInfo.project.name === 'desktop') {
-    await page.getByRole('button', { name: 'Nächster Tag' }).click()
-  }
-  const nightColumn = page.locator('.shift-col').filter({
-    has: page.getByRole('heading', { name: 'Nacht', exact: true }),
-  })
-  await nightColumn.getByRole('button', { name: 'Übergabe beginnen' }).click()
-  await page.getByRole('button', { name: 'Gastbezug (optional)' }).click()
-  await page.getByLabel('Zweck (erforderlich)').selectOption('callback')
-  await page.getByLabel('Gastname').fill('Testgast Synthetisch')
-  await page.getByLabel('Kontaktart').selectOption('phone')
-  await page.getByLabel('Kontakt', { exact: true }).fill('+49 000 111')
-  await page.getByRole('button', { name: 'Gastfall speichern' }).click()
-  await page.getByPlaceholder('Neue Aufgabe … (keine Gastnamen)').fill('Rückruf erledigen — Details im Gastfall')
-  await page.getByRole('button', { name: 'Erfassen' }).click()
-  await expect(page.getByText('••• 11')).toBeVisible()
-  await expect(page.getByText('+49 000 111')).not.toBeVisible()
-  await page.getByRole('button', { name: 'Kontakt anzeigen (wird protokolliert)' }).click()
-  await expect(page.getByText('+49 000 111')).toBeVisible()
+  expect(csp).toContain("connect-src 'self'")
+  expect(csp).not.toMatch(/connect-src[^;]*(https?:|\*)/)
 })
