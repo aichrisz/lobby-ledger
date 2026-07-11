@@ -5,6 +5,7 @@ import {
   type LedgerShift, type LedgerTask,
 } from './api'
 import { buildBrief } from './brief'
+import { cycleThemePreference, resolveTheme, type ThemePreference } from './theme'
 
 export interface SimplePilotDeps {
   api: LedgerApi
@@ -16,11 +17,23 @@ export interface SimplePilotDeps {
 }
 
 const INITIALS_KEY = 'lobby-ledger:initials'
+const THEME_KEY = 'lobby-ledger:simple-theme'
 const SHIFTS: LedgerShift[] = ['frueh', 'spaet', 'nacht']
 const SHIFT_LABELS: Record<LedgerShift, string> = { frueh: 'Früh', spaet: 'Spät', nacht: 'Nacht' }
 const DEPARTMENTS: Array<[LedgerDepartment, string]> = [
   ['front-office', 'Front Office'], ['housekeeping', 'Housekeeping'], ['restaurant', 'Restaurant'],
 ]
+const THEME_LABELS: Record<ThemePreference, string> = { system: 'System', light: 'Hell', dark: 'Dunkel' }
+
+function storedThemePreference(storage: StorageLike): ThemePreference {
+  const preference = storage.getItem(THEME_KEY)
+  return preference === 'light' || preference === 'dark' || preference === 'system' ? preference : 'system'
+}
+
+function systemPrefersDark(): boolean {
+  return typeof globalThis.matchMedia === 'function'
+    && globalThis.matchMedia('(prefers-color-scheme: dark)').matches
+}
 
 function isoDate(date: Date): string {
   const year = date.getFullYear()
@@ -46,6 +59,8 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const [date, setDate] = useState(() => isoDate(deps.now()))
   const [shift, setShift] = useState<LedgerShift>(() => shiftFor(deps.now()))
   const [initials, setInitials] = useState(() => (deps.storage.getItem(INITIALS_KEY) ?? '').toUpperCase())
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() => storedThemePreference(deps.storage))
+  const [systemDark, setSystemDark] = useState(systemPrefersDark)
   const [tasks, setTasks] = useState<LedgerTask[]>([])
   const [text, setText] = useState('')
   const [ref, setRef] = useState('')
@@ -56,6 +71,29 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const [message, setMessage] = useState('')
   const loadSequence = useRef(0)
   const validInitials = /^[A-Z]{2,4}$/.test(initials)
+
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = resolveTheme(themePreference, systemDark)
+    }
+  }, [systemDark, themePreference])
+
+  useEffect(() => {
+    if (typeof globalThis.matchMedia !== 'function') return
+    const media = globalThis.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = (event: MediaQueryListEvent) => {
+      if (themePreference === 'system') setSystemDark(event.matches)
+    }
+    if (themePreference === 'system') setSystemDark(media.matches)
+    media.addEventListener('change', onChange)
+    return () => media.removeEventListener('change', onChange)
+  }, [themePreference])
+
+  const changeThemePreference = () => {
+    const next = cycleThemePreference(themePreference)
+    setThemePreference(next)
+    deps.storage.setItem(THEME_KEY, next)
+  }
 
   const load = async (serviceDate: string, sourceShift = shift) => {
     const sequence = ++loadSequence.current
@@ -157,7 +195,11 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const brief = buildBrief(date, shift, initials, tasks)
   return <div class="simple-ledger">
     <header>
-      <div class="header-row"><span class="wordmark">Lobby Ledger</span><span class="open-count">{openTasks.length} offen</span></div>
+      <div class="header-row"><span class="wordmark">Lobby Ledger</span><div class="header-actions"><span class="open-count">{openTasks.length} offen</span>
+        <button class="theme-control" type="button" aria-pressed={resolveTheme(themePreference, systemDark) === 'dark'} onClick={changeThemePreference}>
+          Darstellung: {THEME_LABELS[themePreference]}
+        </button>
+      </div></div>
       <fieldset class="shift-control">
         <legend class="visually-hidden">Aktuelle Schicht</legend>
         {SHIFTS.map((item) => <label class={`shift-option${shift === item ? ' on' : ''}`} key={item}>

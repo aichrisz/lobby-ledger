@@ -9,8 +9,11 @@
 .simple-ledger { min-height: 100dvh; }
 .simple-ledger > header { padding: var(--space-3) max(var(--space-4), calc((100vw - var(--col-max)) / 2)); border-bottom: 1px solid var(--hairline); background: var(--paper-raised); }
 .header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.header-actions { display: flex; align-items: center; justify-content: end; gap: var(--space-2); }
 .wordmark { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 580; }
 .open-count { color: var(--ink-soft); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.theme-control { min-height: var(--tap); border-color: var(--hairline) !important; background: transparent !important; color: var(--ink) !important; font-size: var(--text-sm) !important; font-weight: 700; white-space: nowrap; }
+.theme-control[aria-pressed='true'] { border-color: var(--accent) !important; background: var(--accent) !important; color: var(--accent-ink) !important; }
 .shift-control { display: flex; margin: var(--space-3) 0 0; padding: 0; overflow: hidden; border: 1px solid var(--hairline); border-radius: var(--radius); }
 .shift-option { flex: 1; }
 .shift-option input, .department-chips input { position: absolute; opacity: 0; pointer-events: none; }
@@ -27,6 +30,7 @@
 .date-control svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
 .initials-field { display: grid; gap: var(--space-1); color: var(--ink-soft); font-size: var(--text-sm); }
 .initials-field input { width: 88px; color: var(--ink); font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.simple-ledger input:focus-visible, .simple-ledger button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .simple-ledger main { width: min(100%, var(--col-max)); margin: 0 auto; padding: var(--space-5) var(--space-4) 190px; }
 .simple-tasks { list-style: none; margin: var(--space-4) 0 0; padding: 0; border-top: 1px solid var(--hairline); }
 .simple-tasks li { display: grid; grid-template-columns: var(--tap) 1fr auto; gap: var(--space-2); align-items: center; min-height: 64px; border-bottom: 1px solid var(--hairline); }
@@ -59,6 +63,16 @@
 .simple-handover { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-4); margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--hairline); }
 .simple-handover h2 { font-size: 1.3rem; }
 .handover-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+:root[data-theme='light'] .simple-ledger > header, :root[data-theme='light'] .simple-capture { background: var(--paper-raised); border-color: var(--hairline); }
+:root[data-theme='light'] .simple-ledger input, :root[data-theme='light'] .simple-ledger button { background: var(--paper-raised); border-color: var(--hairline); color: var(--ink); }
+:root[data-theme='light'] .shift-option.on span, :root[data-theme='light'] .department-chips label.on span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+:root[data-theme='dark'] .simple-ledger > header, :root[data-theme='dark'] .simple-capture { background: var(--paper-raised); border-color: var(--hairline); }
+:root[data-theme='dark'] .simple-ledger input, :root[data-theme='dark'] .simple-ledger button { background: var(--paper-raised); border-color: var(--hairline); color: var(--ink); }
+:root[data-theme='dark'] .simple-ledger input:focus-visible, :root[data-theme='dark'] .simple-ledger button:focus-visible { outline-color: var(--focus); }
+:root[data-theme='dark'] .shift-option.on span, :root[data-theme='dark'] .department-chips label.on span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+:root[data-theme='dark'] .theme-control { background: transparent !important; border-color: var(--hairline) !important; color: var(--ink) !important; }
+:root[data-theme='dark'] .theme-control[aria-pressed='true'] { background: var(--accent) !important; border-color: var(--accent) !important; color: var(--accent-ink) !important; }
+:root[data-theme='light'] .simple-capture button, :root[data-theme='dark'] .simple-capture button { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 @media (max-width: 520px) {
   .ledger-controls { align-items: stretch; }
   .initials-field { width: 100%; }

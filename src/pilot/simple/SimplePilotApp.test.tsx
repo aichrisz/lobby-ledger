@@ -19,6 +19,26 @@ function deps(apiValue: LedgerApi, storage = fakeStorage()): SimplePilotDeps {
   return { api: apiValue, storage, now: () => new Date('2026-07-11T09:00:00Z'), print: vi.fn(), copy: vi.fn(), download: vi.fn() }
 }
 
+function mockSystemTheme(dark = false) {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>()
+  const media = {
+    matches: dark,
+    media: '(prefers-color-scheme: dark)',
+    onchange: null,
+    addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener),
+    addListener: (listener: (event: MediaQueryListEvent) => void) => listeners.add(listener),
+    removeListener: (listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener),
+    dispatchEvent: () => true,
+    change(next: boolean) {
+      media.matches = next
+      listeners.forEach((listener) => listener({ matches: next } as MediaQueryListEvent))
+    },
+  }
+  vi.stubGlobal('matchMedia', vi.fn(() => media))
+  return media
+}
+
 describe('SimplePilotApp', () => {
   test('shows the PIN gate first when no valid cookie exists', async () => {
     const ledgerApi = api({ list: vi.fn(async () => { throw new UnauthorizedError() }) })
@@ -47,16 +67,57 @@ describe('SimplePilotApp', () => {
     expect(screen.getByRole('button', { name: 'Als .txt' })).toBeTruthy()
   })
 
-  test('renders date navigation controls with hidden SVG chevrons', async () => {
+  test('moves the selected date with the previous and next date controls', async () => {
     const ledgerApi = api()
     render(<SimplePilotApp deps={deps(ledgerApi)} />)
     fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
     fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
     await screen.findByRole('heading', { name: 'Aufgaben' })
 
-    for (const label of ['Vorheriger Tag', 'Nächster Tag']) {
-      expect(screen.getByRole('button', { name: label }).querySelector('svg[aria-hidden="true"]')).toBeTruthy()
-    }
+    fireEvent.click(screen.getByRole('button', { name: 'Vorheriger Tag' }))
+    expect(await screen.findByDisplayValue('2026-07-10')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Nächster Tag' }))
+    expect(await screen.findByDisplayValue('2026-07-11')).toBeTruthy()
+  })
+
+  test('lets the header theme control persist an override and return to the system preference', async () => {
+    const media = mockSystemTheme(false)
+    const storage = fakeStorage()
+    const view = render(<SimplePilotApp deps={deps(api(), storage)} />)
+    fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
+    await screen.findByRole('heading', { name: 'Aufgaben' })
+
+    const control = screen.getByRole('button', { name: 'Darstellung: System' })
+    expect(control.getAttribute('aria-pressed')).toBe('false')
+    expect(document.documentElement.dataset.theme).toBe('light')
+
+    fireEvent.click(control)
+    expect(screen.getByRole('button', { name: 'Darstellung: Dunkel' }).getAttribute('aria-pressed')).toBe('true')
+    expect(storage.getItem('lobby-ledger:simple-theme')).toBe('dark')
+    expect(document.documentElement.dataset.theme).toBe('dark')
+
+    view.unmount()
+    render(<SimplePilotApp deps={deps(api(), storage)} />)
+    fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
+    await screen.findByRole('heading', { name: 'Aufgaben' })
+    expect(screen.getByRole('button', { name: 'Darstellung: Dunkel' }).getAttribute('aria-pressed')).toBe('true')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Darstellung: Dunkel' }))
+    expect(screen.getByRole('button', { name: 'Darstellung: Hell' }).getAttribute('aria-pressed')).toBe('false')
+    expect(storage.getItem('lobby-ledger:simple-theme')).toBe('light')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Darstellung: Hell' }))
+    expect(screen.getByRole('button', { name: 'Darstellung: System' })).toBeTruthy()
+    expect(storage.getItem('lobby-ledger:simple-theme')).toBe('system')
+
+    media.change(true)
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'))
+    fireEvent.click(screen.getByRole('button', { name: 'Darstellung: System' }))
+    media.change(false)
+    expect(document.documentElement.dataset.theme).toBe('dark')
+    vi.unstubAllGlobals()
   })
 
   test('loads and captures the selected shift with V1 task details', async () => {
