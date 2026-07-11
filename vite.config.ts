@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    include: ['src/**/*.test.{ts,tsx}'],
+    maxWorkers: 2,
+    include: ['src/**/*.test.{ts,tsx}', 'api/**/*.test.ts'],
   },
 })

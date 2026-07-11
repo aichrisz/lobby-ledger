@@ -1,0 +1,42 @@
+.pin-page { min-height: 100dvh; display: grid; place-items: center; padding: var(--space-4); }
+.pin-sheet { width: min(100%, 390px); padding: var(--space-6); border: 1px solid var(--hairline); border-top: 4px solid var(--accent); background: var(--paper-raised); }
+.pin-sheet h1, .tasks-section h1, .simple-handover h2 { margin: 0; font-family: var(--font-display); font-weight: 520; }
+.pin-sheet form { display: grid; gap: var(--space-2); margin-top: var(--space-5); }
+.pin-sheet input, .pin-sheet button, .simple-ledger input, .simple-ledger button { min-height: var(--tap); border: 1px solid var(--hairline); border-radius: 2px; background: var(--paper-raised); padding: 0 var(--space-3); font-size: 1rem; }
+.pin-sheet button, .simple-capture button { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.eyebrow { margin: 0 0 var(--space-2); color: var(--accent); font-size: var(--text-sm); font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.form-message { color: var(--ink-soft); }
+.simple-ledger { min-height: 100dvh; }
+.simple-ledger > header { padding: var(--space-4) max(var(--space-4), calc((100vw - var(--col-max)) / 2)); border-bottom: 1px solid var(--hairline); background: var(--paper-raised); }
+.wordmark { display: block; font-family: var(--font-display); font-size: 1.35rem; font-weight: 580; }
+.ledger-controls { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: end; justify-content: space-between; margin-top: var(--space-4); }
+.date-control { display: grid; grid-template-columns: var(--tap) auto var(--tap); gap: var(--space-1); align-items: end; }
+.date-control label { grid-column: 1 / -1; font-size: var(--text-sm); color: var(--ink-soft); }
+.date-control input { min-width: 148px; }
+.initials-field { display: grid; gap: var(--space-1); color: var(--ink-soft); font-size: var(--text-sm); }
+.initials-field input { width: 88px; color: var(--ink); font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+.simple-ledger main { width: min(100%, var(--col-max)); margin: 0 auto; padding: var(--space-6) var(--space-4); }
+.simple-tasks { list-style: none; margin: var(--space-4) 0 0; padding: 0; border-top: 1px solid var(--hairline); }
+.simple-tasks li { display: grid; grid-template-columns: var(--tap) 1fr auto; gap: var(--space-2); align-items: center; min-height: 60px; border-bottom: 1px solid var(--hairline); }
+.simple-tasks li[data-status='done'] span { color: var(--ink-soft); text-decoration: line-through; }
+.simple-tasks .empty { display: block; padding: var(--space-5) 0; color: var(--ink-soft); }
+.status-button { padding: 0 !important; border: 0 !important; background: transparent !important; color: var(--accent); font-size: 1.4rem !important; }
+.delete-button { border: 0 !important; background: transparent !important; color: var(--ink-soft); font-size: var(--text-sm) !important; }
+.simple-capture { margin-top: var(--space-6); padding-top: var(--space-4); border-top: 2px solid var(--accent); }
+.simple-capture > label { display: block; margin-bottom: var(--space-2); font-weight: 700; }
+.simple-capture > div { display: grid; grid-template-columns: 1fr auto; gap: var(--space-2); }
+.simple-capture small { display: block; margin-top: var(--space-2); color: var(--ink-soft); }
+.simple-capture button:disabled { opacity: .5; }
+.simple-handover { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space-4); margin-top: var(--space-6); padding-top: var(--space-5); border-top: 1px solid var(--hairline); }
+.simple-handover h2 { font-size: 1.3rem; }
+.handover-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+@media (max-width: 440px) { .ledger-controls { align-items: stretch; } .initials-field { width: 100%; } .initials-field input { width: 100%; } .simple-capture > div { grid-template-columns: 1fr; } }
+@media print {
+  @page { margin: 18mm; }
+  .simple-ledger > header .ledger-controls, .simple-capture, .handover-actions, .delete-button, .status-button, .form-message { display: none !important; }
+  .simple-ledger > header { padding: 0 0 8mm; background: white; }
+  .simple-ledger main { width: 100%; padding: 8mm 0; }
+  .simple-tasks li { grid-template-columns: 1fr; }
+  .simple-tasks li::before { content: '[ ]'; }
+  .simple-tasks li[data-status='done']::before { content: '[x]'; }
+}

@@ -12,6 +12,18 @@
 | Shared pilot user email | | | |
 | Daily backups | enabled (provider default) | | |
 
-Secrets (database password, shared-account password, anon key, service_role key)
-live in the operator password manager and CI secrets only. The service_role key is
-never used by this repository.
+Secrets live in the operator password manager and Vercel's server environment only.
+The service-role key is used exclusively by the serverless API and is never included
+in browser code.
+
+# Simple PIN pilot environment
+
+The Vercel project needs these server-only environment variable names:
+
+- `PILOT_PIN`
+- `PILOT_SESSION_SECRET` (at least 32 random bytes)
+- `PILOT_ORGANIZATION_ID`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+Do not prefix any of them with `VITE_`. They belong only in Vercel's server environment and must not be exposed to the browser build.

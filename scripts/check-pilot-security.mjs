@@ -28,6 +28,18 @@ const secretPatterns = [
 ]
 scan('dist', secretPatterns)
 scan('dist-pilot', secretPatterns)
+scan('dist-pilot', [
+  ['Supabase reference in pilot browser bundle', /supabase/i],
+  ['Vite Supabase variable in pilot browser bundle', /VITE_SUPABASE/],
+  ['anon key (JWT) in pilot browser bundle', /eyJhbGciOi/],
+])
+
+// The simple pilot frontend may call only same-origin server APIs.
+scan('src/pilot/simple', [
+  ['Supabase import in simple pilot frontend', /@supabase|VITE_SUPABASE/],
+  ['server environment reference in simple pilot frontend', /SUPABASE_SERVICE_ROLE_KEY|PILOT_SESSION_SECRET|PILOT_PIN|PILOT_ORGANIZATION_ID/],
+])
+scan('api', [['Vite environment reference in server API', /VITE_/]])
 
 // 2. The DEMO bundle must not know Supabase exists (no URL, no key, no client lib).
 scan('dist', [
@@ -39,6 +51,15 @@ scan('dist', [
 const tracked = execSync('git ls-files', { encoding: 'utf8' }).split('\n')
 for (const f of tracked) {
   if (/^\.env(\..+)?$/.test(f) && f !== '.env.example') failures.push(`env file tracked: ${f}`)
+}
+
+const pilotHtml = readFileSync('pilot.html', 'utf8')
+if (!/connect-src 'self'/.test(pilotHtml) || /connect-src[^;]*(https?:|\*)/.test(pilotHtml)) {
+  failures.push('pilot CSP permits a non-same-origin connection')
+}
+const serviceWorker = readFileSync('public/sw.js', 'utf8')
+if (!/pathname\.startsWith\('\/api\/'\)/.test(serviceWorker)) {
+  failures.push('service worker does not exclude API responses')
 }
 
 // 4. Dependency audit (high+ fails the gate).
