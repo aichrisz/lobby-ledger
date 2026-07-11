@@ -1,5 +1,55 @@
-.signin, .signature-bar { max-width: var(--col-max); margin: 0 auto; padding: var(--space-4); }
-.signature-bar { border-bottom: 1px solid var(--hairline); background: var(--paper-raised); }
+.signin {
+  max-width: none;
+  min-height: 100dvh;
+  display: grid;
+  align-items: center;
+  padding: clamp(24px, 7vw, 72px) var(--space-4);
+  background: linear-gradient(135deg, var(--paper) 0%, var(--paper) 57%, color-mix(in srgb, var(--wichtig-bg) 46%, var(--paper)) 100%);
+}
+.signin-sheet {
+  width: min(100%, 510px);
+  margin: 0 auto;
+  padding: clamp(24px, 7vw, 48px);
+  border: 1px solid var(--hairline);
+  border-top: 4px solid var(--accent);
+  border-radius: 2px;
+  background: var(--paper-raised);
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+.signin-intro { padding-bottom: var(--space-5); border-bottom: 1px solid var(--hairline); }
+.eyebrow { margin: 0 0 var(--space-3); color: var(--accent); font-size: var(--text-sm); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.signin h1 { margin: 0; font-family: var(--font-display); font-size: clamp(2rem, 8vw, 3.1rem); font-weight: 520; line-height: 1.05; letter-spacing: -.035em; }
+.signin-lede { max-width: 31ch; margin: var(--space-3) 0 0; color: var(--ink-soft); }
+.signin-form { display: grid; gap: var(--space-4); margin-top: var(--space-5); }
+.signin-form label { display: grid; gap: 6px; color: var(--ink-soft); font-size: var(--text-sm); font-weight: 650; }
+.signin-form input, .signature-bar input, .capture input, .guest-case input, .guest-case select, .date-nav input {
+  border: 1px solid var(--hairline); border-radius: 2px; background: var(--paper); color: var(--ink); padding: 0 var(--space-3); box-shadow: inset 0 1px 0 color-mix(in srgb, white 55%, transparent);
+}
+.signin-form input:focus, .signature-bar input:focus, .capture input:focus, .guest-case input:focus, .guest-case select:focus, .date-nav input:focus { border-color: var(--accent); outline: 2px solid color-mix(in srgb, var(--focus) 48%, transparent); outline-offset: 1px; }
+.signin-form button, .signature-bar form button, .pilot .capture > button { border: 1px solid var(--accent); border-radius: 2px; background: var(--accent); color: var(--accent-ink); font-weight: 700; letter-spacing: .01em; box-shadow: 0 2px 0 color-mix(in srgb, var(--ink) 20%, transparent); }
+.signin-form button:hover:not(:disabled), .signature-bar form button:hover, .pilot .capture > button:hover { filter: brightness(.94); }
+.signin-form button:disabled { cursor: progress; opacity: .72; }
+.signin-footer { margin-top: var(--space-5); padding-top: var(--space-4); border-top: 1px solid var(--hairline); color: var(--ink-soft); font-size: var(--text-sm); }
+.signin-form button { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+.signature-bar { max-width: none; padding: var(--space-3) max(var(--space-4), calc((100vw - var(--col-max)) / 2)); border-bottom: 1px solid var(--hairline); background: color-mix(in srgb, var(--paper-raised) 93%, var(--paper)); }
+.signature-list button, .signature-bar[data-active] button, .date-nav button, .shift-col > button, .review button, .inbox button, .archive > button, .admin button, .guest-case button, .task-row button { border: 1px solid var(--hairline); border-radius: 2px; background: var(--paper-raised); color: var(--ink); }
+.signature-list button:hover, .signature-bar[data-active] button:hover, .date-nav button:hover, .shift-col > button:hover, .review button:hover, .inbox button:hover, .archive > button:hover, .admin button:hover, .guest-case button:hover, .task-row button:hover { border-color: var(--accent); color: var(--accent); }
+.pilot .header { padding-inline: max(var(--space-4), calc((100vw - var(--col-max)) / 2)); background: var(--paper-raised); }
+.pilot .header nav { gap: 0; border-top: 1px solid var(--hairline); padding-top: var(--space-2); }
+.pilot .header nav a { border-bottom: 2px solid transparent; color: var(--ink-soft); font-size: var(--text-sm); font-weight: 650; text-decoration: none; }
+.pilot .header nav a[aria-current='page'], .pilot .header nav a:hover { border-bottom-color: var(--accent); color: var(--accent); }
+.board, .editor, .inbox, .archive, .admin { padding-top: var(--space-5); }
+.shift-col { padding: var(--space-4); border: 1px solid var(--hairline); background: var(--paper-raised); }
+.shift-col h2 { margin: 0 0 var(--space-3); font-size: 1.35rem; }
+.shift-col a { text-decoration: none; }
+.task-row { padding: var(--space-4) 0; }
+.task-row:first-child { border-top: 1px solid var(--hairline); }
+.task-row[data-priority='wichtig'] { background: color-mix(in srgb, var(--wichtig-bg) 30%, transparent); }
+.badge { border-radius: 999px; font-size: var(--text-sm); font-weight: 700; line-height: 1.75; }
+.pilot .capture { border-top: 2px solid var(--accent); box-shadow: 0 -12px 28px color-mix(in srgb, var(--ink) 9%, transparent); }
+@media (min-width: 680px) { .shift-columns { gap: var(--space-3); } .board, .editor, .inbox, .archive, .admin { padding-top: var(--space-6); } }
+@media (max-width: 420px) { .signin { padding-inline: var(--space-3); } .signin-sheet { padding: var(--space-5); } }
+
 .signature-bar[data-active] { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
 .signature-list { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .signature-list button, .signature-bar form button, .signin button {
@@ -56,3 +106,6 @@
 .admin > label input { display: block; width: 100%; min-height: var(--tap); font-size: var(--text-base); }
 .admin .hint p { margin: var(--space-1) 0; }
 .audit .task-row { align-items: flex-start; flex-direction: column; overflow-wrap: anywhere; }
+
+/* Keep the primary action unmistakable after the generic pilot button rules. */
+.signin .signin-form button { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
