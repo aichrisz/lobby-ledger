@@ -55,6 +55,9 @@ export function createPilotApi(client: PilotClient) {
     async boardForDate(serviceDate: string): Promise<Result<HandoverRow[]>> {
       return wrap(await client.from('handovers').select('*').eq('service_date', serviceDate))
     },
+    async handoverById(id: string): Promise<Result<HandoverRow>> {
+      return wrap(await client.from('handovers').select('*').eq('id', id).single())
+    },
     async tasksFor(handoverId: string): Promise<Result<TaskRow[]>> {
       return wrap(await client.from('handover_tasks').select('*').eq('handover_id', handoverId).order('created_at'))
     },

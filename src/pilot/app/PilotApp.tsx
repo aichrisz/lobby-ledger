@@ -5,6 +5,7 @@ import type { PilotApi, SignatureRow } from '../api/rpc'
 import { SignIn } from './SignIn'
 import { SignatureBar, loadStoredSignature } from './SignatureBar'
 import { ShiftBoard } from './ShiftBoard'
+import { HandoverEditor } from './HandoverEditor'
 
 export interface PilotDeps {
   session: PilotSession
@@ -48,8 +49,8 @@ export function PilotApp({ deps }: { deps: PilotDeps }) {
       </header>
       <SignatureBar api={deps.api} storage={deps.storage} value={signature} onChange={setSignature} />
       <main>
-        {/* Tasks 22–25 mount HandoverEditor / Inbox / Archive / AdminPanel here */}
         {route.view === 'board' && <ShiftBoard api={deps.api} signature={signature} now={deps.now} />}
+        {route.view === 'handover' && <HandoverEditor api={deps.api} signature={signature} handoverId={route.id} />}
       </main>
     </div>
   )

@@ -22,3 +22,19 @@
 .status[data-status='published'] { color: var(--accent); }
 .status[data-status='acknowledged'] { color: var(--ink-soft); }
 .empty { color: var(--ink-soft); }
+.context { color: var(--ink-soft); font-size: var(--text-sm); }
+.task-list { list-style: none; margin: 0; padding: 0; }
+.task-row { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center;
+  padding: var(--space-3) 0; border-bottom: 1px solid var(--hairline); }
+.task-row[data-priority='wichtig'] { border-left: 3px solid var(--brass); padding-left: var(--space-2); }
+.task-row[data-status='done'] .text, .task-row[data-status='carried'] .text { color: var(--ink-soft); }
+.badge { color: var(--wichtig-text); background: var(--wichtig-bg); padding: 0 var(--space-2); border-radius: var(--radius); }
+.origin, .done-label { color: var(--ink-soft); font-size: var(--text-sm); }
+.templates { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chip { display: inline-flex; align-items: center; gap: var(--space-1); min-height: var(--tap);
+  padding: 0 var(--space-3); border: 1px solid var(--hairline); border-radius: var(--radius); }
+.pilot .capture { position: static; inset: auto; transform: none; width: 100%; margin-top: var(--space-5); }
+.pilot .capture-details fieldset { display: flex; flex-wrap: wrap; gap: var(--space-2); width: 100%; }
+.pilot .capture-details .chip:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.task-row button, .pilot .capture > button { min-height: var(--tap); padding: 0 var(--space-3); }
+.capture input[type='text'], .capture input:not([type]) { width: 100%; min-height: var(--tap); font-size: var(--text-base); }
