@@ -1,1 +1,12 @@
-/* pilot styles grow per task */
+.signin, .signature-bar { max-width: var(--col-max); margin: 0 auto; padding: var(--space-4); }
+.signature-bar { border-bottom: 1px solid var(--hairline); background: var(--paper-raised); }
+.signature-bar[data-active] { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.signature-list { list-style: none; margin: 0 0 var(--space-3); padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.signature-list button, .signature-bar form button, .signin button {
+  min-height: var(--tap); padding: 0 var(--space-4); border: 1px solid var(--hairline);
+  border-radius: var(--radius); background: var(--paper-raised); color: var(--ink);
+}
+.signin input, .signature-bar input { min-height: var(--tap); font-size: var(--text-base); width: 100%; }
+.hint { color: var(--wichtig-text); }
+.pilot .header nav { display: flex; flex-wrap: wrap; gap: var(--space-1); margin-top: var(--space-2); }
+.pilot .header nav a { display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 var(--space-2); color: var(--ink); }

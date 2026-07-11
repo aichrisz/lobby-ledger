@@ -5,5 +5,17 @@ import '../../styles/base.css'
 import '../../styles/app.css'
 import './pilot.css'
 import { PilotApp } from './PilotApp'
+import { createPilotClient } from '../api/client'
+import { createSession } from '../api/session'
+import { createPilotApi } from '../api/rpc'
 
-render(<PilotApp />, document.getElementById('app')!)
+const client = createPilotClient()
+render(
+  <PilotApp deps={{
+    session: createSession(client),
+    api: createPilotApi(client),
+    storage: localStorage,
+    now: () => new Date(),
+  }} />,
+  document.getElementById('app')!,
+)
