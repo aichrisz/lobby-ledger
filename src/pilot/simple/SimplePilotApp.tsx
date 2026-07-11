@@ -93,8 +93,14 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
       if (themePreference === 'system') setSystemDark(event.matches)
     }
     if (themePreference === 'system') setSystemDark(media.matches)
-    media.addEventListener('change', onChange)
-    return () => media.removeEventListener('change', onChange)
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onChange)
+      return () => media.removeEventListener('change', onChange)
+    }
+    if (typeof media.addListener === 'function') {
+      media.addListener(onChange)
+      return () => media.removeListener(onChange)
+    }
   }, [themePreference])
 
   const changeThemePreference = () => {

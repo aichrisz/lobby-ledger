@@ -19,21 +19,37 @@ function deps(apiValue: LedgerApi, storage = fakeStorage()): SimplePilotDeps {
   return { api: apiValue, storage, now: () => new Date('2026-07-11T09:00:00Z'), print: vi.fn(), copy: vi.fn(), download: vi.fn() }
 }
 
-function mockSystemTheme(dark = false) {
-  const listeners = new Set<(event: MediaQueryListEvent) => void>()
+type MediaChangeListener = (event: MediaQueryListEvent) => void
+
+function mockSystemTheme(dark = false, listenerApi: 'modern' | 'legacy' | 'both' = 'both') {
+  const listeners = new Set<MediaChangeListener>()
   const media = {
     matches: dark,
     media: '(prefers-color-scheme: dark)',
     onchange: null,
-    addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.add(listener),
-    removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener),
-    addListener: (listener: (event: MediaQueryListEvent) => void) => listeners.add(listener),
-    removeListener: (listener: (event: MediaQueryListEvent) => void) => listeners.delete(listener),
     dispatchEvent: () => true,
     change(next: boolean) {
       media.matches = next
       listeners.forEach((listener) => listener({ matches: next } as MediaQueryListEvent))
     },
+  } as {
+    matches: boolean
+    media: string
+    onchange: null
+    dispatchEvent: () => boolean
+    change(next: boolean): void
+    addEventListener?: ReturnType<typeof vi.fn>
+    removeEventListener?: ReturnType<typeof vi.fn>
+    addListener?: ReturnType<typeof vi.fn>
+    removeListener?: ReturnType<typeof vi.fn>
+  }
+  if (listenerApi === 'modern' || listenerApi === 'both') {
+    media.addEventListener = vi.fn((_type: string, listener: MediaChangeListener) => listeners.add(listener))
+    media.removeEventListener = vi.fn((_type: string, listener: MediaChangeListener) => listeners.delete(listener))
+  }
+  if (listenerApi === 'legacy' || listenerApi === 'both') {
+    media.addListener = vi.fn((listener: MediaChangeListener) => listeners.add(listener))
+    media.removeListener = vi.fn((listener: MediaChangeListener) => listeners.delete(listener))
   }
   vi.stubGlobal('matchMedia', vi.fn(() => media))
   return media
@@ -118,6 +134,46 @@ describe('SimplePilotApp', () => {
     media.change(false)
     expect(document.documentElement.dataset.theme).toBe('dark')
     vi.unstubAllGlobals()
+  })
+
+  test('reacts to system theme changes and removes the matching modern MediaQueryList listener on unmount', async () => {
+    const media = mockSystemTheme(false, 'modern')
+    const addEventListener = media.addEventListener!
+    const removeEventListener = media.removeEventListener!
+    const view = render(<SimplePilotApp deps={deps(api())} />)
+
+    try {
+      expect(media.addListener).toBeUndefined()
+      expect(addEventListener).toHaveBeenCalledTimes(1)
+      const listener = addEventListener.mock.calls[0]![1]!
+      media.change(true)
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe('dark'))
+
+      view.unmount()
+      expect(removeEventListener).toHaveBeenCalledWith('change', listener)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  test('reacts to system theme changes and removes the matching legacy MediaQueryList listener on unmount', async () => {
+    const media = mockSystemTheme(true, 'legacy')
+    const addListener = media.addListener!
+    const removeListener = media.removeListener!
+    const view = render(<SimplePilotApp deps={deps(api())} />)
+
+    try {
+      expect(media.addEventListener).toBeUndefined()
+      expect(addListener).toHaveBeenCalledTimes(1)
+      const listener = addListener.mock.calls[0]![0]!
+      media.change(false)
+      await waitFor(() => expect(document.documentElement.dataset.theme).toBe('light'))
+
+      view.unmount()
+      expect(removeListener).toHaveBeenCalledWith(listener)
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   test('restores the prior document theme state when unmounted', () => {
