@@ -19,7 +19,7 @@ export function ThemeToggle() {
       aria-pressed={dark}
       onClick={() => setDark(value => !value)}
     >
-      <span aria-hidden="true">{dark ? '☼' : '◐'}</span>
+      <span class="theme-icon" aria-hidden="true">{dark ? '☀' : '☾'}</span>
     </button>
   )
 }
