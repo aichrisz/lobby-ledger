@@ -24,7 +24,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   const body = request.body && typeof request.body === 'object' && !Array.isArray(request.body)
     ? request.body as Record<string, unknown> : {}
   const validShape = Object.keys(body).length === 1 && typeof body.pin === 'string' && body.pin.length <= 64
-  if (!validShape || !pinMatches(body.pin, configuredPin)) {
+  // Dashboard environment values may carry accidental surrounding whitespace; a numeric
+  // team PIN should not become unusable for that reason.
+  const suppliedPin = typeof body.pin === 'string' ? body.pin.trim() : ''
+  if (!validShape || !pinMatches(suppliedPin, configuredPin.trim())) {
     response.status(401).json({ error: 'PIN ungültig' })
     return
   }

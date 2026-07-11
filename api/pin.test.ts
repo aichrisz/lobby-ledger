@@ -29,6 +29,14 @@ describe('POST /api/pin', () => {
     expect(res.payload).toEqual({ ok: true })
   })
 
+  test('accepts a numeric PIN despite accidental surrounding whitespace in an environment value', async () => {
+    process.env.PILOT_PIN = ' 4815\n'
+    process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
+    const res = new ResponseStub()
+    await handler({ method: 'POST', headers: {}, body: { pin: '4815' }, query: {} }, res)
+    expect(res.statusCode).toBe(200)
+  })
+
   test('returns the same generic rejection for an incorrect PIN', async () => {
     process.env.PILOT_PIN = '4815'
     process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
