@@ -38,8 +38,8 @@ describe('/api/ledger', () => {
   test('reads only through the configured organization scope', async () => {
     listTasks.mockResolvedValue([{ id: 'task-id', text: 'Schlüssel prüfen', status: 'open', createdAt: 'now' }])
     const res = new ResponseStub()
-    await handler({ method: 'GET', headers: { cookie: cookie(), 'sec-fetch-site': 'same-origin' }, body: undefined, query: { date: '2026-07-11' } }, res)
-    expect(listTasks).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', '2026-07-11')
+    await handler({ method: 'GET', headers: { cookie: cookie(), 'sec-fetch-site': 'same-origin' }, body: undefined, query: { date: '2026-07-11', shift: 'frueh' } }, res)
+    expect(listTasks).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', '2026-07-11', 'frueh')
     expect(res.statusCode).toBe(200)
     expect(res.headers.get('cache-control')).toBe('no-store')
   })
@@ -54,8 +54,8 @@ describe('/api/ledger', () => {
   test('supports a non-cacheable POST read for clients migrating off the legacy service worker', async () => {
     listTasks.mockResolvedValue([])
     const res = new ResponseStub()
-    await handler({ method: 'POST', headers: { cookie: cookie(), 'sec-fetch-site': 'same-origin', 'x-lobby-ledger': '1' }, body: { operation: 'read', date: '2026-07-11' }, query: {} }, res)
-    expect(listTasks).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', '2026-07-11')
+    await handler({ method: 'POST', headers: { cookie: cookie(), 'sec-fetch-site': 'same-origin', 'x-lobby-ledger': '1' }, body: { operation: 'read', date: '2026-07-11', shift: 'nacht' }, query: {} }, res)
+    expect(listTasks).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111', '2026-07-11', 'nacht')
     expect(createTask).not.toHaveBeenCalled()
     expect(res.statusCode).toBe(200)
   })

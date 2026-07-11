@@ -1,6 +1,9 @@
 import type { StorageLike } from '../../storage/store'
-import { useEffect, useState } from 'preact/hooks'
-import { UnauthorizedError, type LedgerApi, type LedgerTask } from './api'
+import { useEffect, useRef, useState } from 'preact/hooks'
+import {
+  UnauthorizedError, type LedgerApi, type LedgerDepartment, type LedgerPriority,
+  type LedgerShift, type LedgerTask,
+} from './api'
 import { buildBrief } from './brief'
 
 export interface SimplePilotDeps {
@@ -13,6 +16,11 @@ export interface SimplePilotDeps {
 }
 
 const INITIALS_KEY = 'lobby-ledger:initials'
+const SHIFTS: LedgerShift[] = ['frueh', 'spaet', 'nacht']
+const SHIFT_LABELS: Record<LedgerShift, string> = { frueh: 'Früh', spaet: 'Spät', nacht: 'Nacht' }
+const DEPARTMENTS: Array<[LedgerDepartment, string]> = [
+  ['front-office', 'Front Office'], ['housekeeping', 'Housekeeping'], ['restaurant', 'Restaurant'],
+]
 
 function isoDate(date: Date): string {
   const year = date.getFullYear()
@@ -27,35 +35,52 @@ function moveDate(value: string, amount: number): string {
   return isoDate(date)
 }
 
+function shiftFor(date: Date): LedgerShift {
+  const hour = date.getHours()
+  return hour >= 6 && hour < 14 ? 'frueh' : hour >= 14 && hour < 22 ? 'spaet' : 'nacht'
+}
+
 export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const [authenticated, setAuthenticated] = useState(false)
   const [pin, setPin] = useState('')
   const [date, setDate] = useState(() => isoDate(deps.now()))
+  const [shift, setShift] = useState<LedgerShift>(() => shiftFor(deps.now()))
   const [initials, setInitials] = useState(() => (deps.storage.getItem(INITIALS_KEY) ?? '').toUpperCase())
   const [tasks, setTasks] = useState<LedgerTask[]>([])
   const [text, setText] = useState('')
+  const [ref, setRef] = useState('')
+  const [department, setDepartment] = useState<LedgerDepartment>('front-office')
+  const [priority, setPriority] = useState<LedgerPriority>('normal')
+  const [captureExpanded, setCaptureExpanded] = useState(false)
+  const [showDone, setShowDone] = useState(false)
   const [message, setMessage] = useState('')
+  const loadSequence = useRef(0)
   const validInitials = /^[A-Z]{2,4}$/.test(initials)
 
-  const load = async (serviceDate: string) => {
+  const load = async (serviceDate: string, sourceShift = shift) => {
+    const sequence = ++loadSequence.current
+    setTasks([])
     try {
-      setTasks(await deps.api.list(serviceDate))
+      const loaded = await deps.api.list(serviceDate, sourceShift)
+      if (sequence !== loadSequence.current) return
+      setTasks(loaded)
       setAuthenticated(true)
       setMessage('')
     } catch (error) {
+      if (sequence !== loadSequence.current) return
       if (error instanceof UnauthorizedError) setAuthenticated(false)
       else setMessage('Laden fehlgeschlagen. Bitte erneut versuchen.')
     }
   }
 
-  useEffect(() => { if (authenticated) void load(date) }, [date])
+  useEffect(() => { if (authenticated) void load(date, shift) }, [date, shift])
 
   const unlock = async (event: Event) => {
     event.preventDefault()
     try {
       await deps.api.unlock(pin)
       setPin('')
-      await load(date)
+      await load(date, shift)
     } catch {
       setMessage('PIN ungültig.')
     }
@@ -72,9 +97,13 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
     const trimmed = text.trim()
     if (!validInitials || !trimmed) return
     try {
-      const created = await deps.api.create(date, initials, trimmed)
+      const created = await deps.api.create(date, shift, initials, {
+        text: trimmed, ref: ref.trim(), department, priority,
+      })
       setTasks((current) => [...current, created])
       setText('')
+      setRef('')
+      setPriority('normal')
       setMessage('Gespeichert.')
     } catch (error) {
       if (error instanceof UnauthorizedError) setAuthenticated(false)
@@ -85,7 +114,7 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const setStatus = async (item: LedgerTask) => {
     if (!validInitials) { setMessage('Bitte zuerst Kürzel eingeben.'); return }
     try {
-      const updated = await deps.api.setStatus(item.id, date, initials, item.status === 'open' ? 'done' : 'open')
+      const updated = await deps.api.setStatus(item.id, date, shift, initials, item.status === 'open' ? 'done' : 'open')
       setTasks((current) => current.map((task) => task.id === updated.id ? updated : task))
     } catch (error) {
       if (error instanceof UnauthorizedError) setAuthenticated(false)
@@ -96,7 +125,7 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const remove = async (item: LedgerTask) => {
     if (!validInitials) { setMessage('Bitte zuerst Kürzel eingeben.'); return }
     try {
-      await deps.api.delete(item.id, date, initials)
+      await deps.api.delete(item.id, date, shift, initials)
       setTasks((current) => current.filter((task) => task.id !== item.id))
     } catch (error) {
       if (error instanceof UnauthorizedError) setAuthenticated(false)
@@ -121,10 +150,21 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
     </main>
   }
 
-  const brief = buildBrief(date, initials, tasks)
+  const openTasks = tasks.filter((task) => task.status === 'open')
+    .sort((a, b) => a.priority === b.priority ? b.createdAt.localeCompare(a.createdAt) : a.priority === 'wichtig' ? -1 : 1)
+  const doneTasks = tasks.filter((task) => task.status === 'done')
+    .sort((a, b) => (b.doneAt ?? '').localeCompare(a.doneAt ?? ''))
+  const brief = buildBrief(date, shift, initials, tasks)
   return <div class="simple-ledger">
     <header>
-      <span class="wordmark">Lobby Ledger</span>
+      <div class="header-row"><span class="wordmark">Lobby Ledger</span><span class="open-count">{openTasks.length} offen</span></div>
+      <fieldset class="shift-control">
+        <legend class="visually-hidden">Aktuelle Schicht</legend>
+        {SHIFTS.map((item) => <label class={`shift-option${shift === item ? ' on' : ''}`} key={item}>
+          <input type="radio" name="shift" value={item} checked={shift === item} onChange={() => setShift(item)} />
+          <span>{SHIFT_LABELS[item]}</span>
+        </label>)}
+      </fieldset>
       <div class="ledger-controls">
         <div class="date-control">
           <button type="button" aria-label="Vorheriger Tag" onClick={() => setDate(moveDate(date, -1))}>‹</button>
@@ -143,28 +183,51 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
       <section class="tasks-section">
         <h1>Aufgaben</h1>
         <ul class="simple-tasks">
-          {tasks.map((item) => <li key={item.id} data-status={item.status}>
+          {openTasks.map((item) => <li key={item.id} data-status={item.status} class={item.priority === 'wichtig' ? 'wichtig' : ''}>
             <button class="status-button" type="button" aria-label={item.status === 'open' ? 'Als erledigt markieren' : 'Wieder öffnen'}
               onClick={() => void setStatus(item)}>{item.status === 'done' ? '✓' : '○'}</button>
-            <span>{item.text}</span>
+            <div class="task-main"><p>{item.ref && <strong class="nums">{item.ref}</strong>} {item.text}</p>
+              <small>{DEPARTMENTS.find(([key]) => key === item.department)?.[1]}{item.priority === 'wichtig' && ' · Wichtig'}</small></div>
             <button class="delete-button" type="button" aria-label="Aufgabe löschen" onClick={() => void remove(item)}>Löschen</button>
           </li>)}
           {tasks.length === 0 && <li class="empty">Noch keine Aufgaben für diesen Tag.</li>}
         </ul>
+        {doneTasks.length > 0 && <div class="done-section">
+          <button class="done-toggle" type="button" aria-expanded={showDone} onClick={() => setShowDone(!showDone)}>Erledigt ({doneTasks.length})</button>
+          {showDone && <ul class="simple-tasks is-done">{doneTasks.map((item) => <li key={item.id} data-status="done">
+            <button class="status-button" type="button" aria-label="Wieder öffnen" onClick={() => void setStatus(item)}>✓</button>
+            <div class="task-main"><p>{item.ref && <strong class="nums">{item.ref}</strong>} {item.text}</p>
+              <small>{DEPARTMENTS.find(([key]) => key === item.department)?.[1]}</small></div>
+            <button class="delete-button" type="button" aria-label="Aufgabe löschen" onClick={() => void remove(item)}>Löschen</button>
+          </li>)}</ul>}
+        </div>}
       </section>
 
       <form class="simple-capture" onSubmit={capture}>
-        <label for="task-text">Aufgabe erfassen</label>
-        <div>
+        <label class="visually-hidden" for="task-text">Neue Aufgabe, keine Gastnamen</label>
+        <div class="capture-row">
           <input id="task-text" maxlength={200} value={text} placeholder="Neue Aufgabe … (keine Gastnamen)"
-            onInput={(event) => setText(event.currentTarget.value)} />
+            onFocus={() => setCaptureExpanded(true)} onInput={(event) => setText(event.currentTarget.value)} />
           <button type="submit" disabled={!validInitials || !text.trim()}>Erfassen</button>
         </div>
+        {captureExpanded && <div class="capture-details">
+          <input aria-label="Zimmer oder Referenz" maxlength={24} value={ref} placeholder="Zimmer / Ref."
+            onInput={(event) => setRef(event.currentTarget.value)} />
+          <fieldset class="department-chips"><legend class="visually-hidden">Abteilung</legend>
+            {DEPARTMENTS.map(([key, label]) => <label class={department === key ? 'on' : ''} key={key}>
+              <input type="radio" name="department" value={key} checked={department === key} onChange={() => setDepartment(key)} />
+              <span>{label}</span>
+            </label>)}
+          </fieldset>
+          <label class="priority-toggle"><input type="checkbox" checked={priority === 'wichtig'}
+            onChange={(event) => setPriority(event.currentTarget.checked ? 'wichtig' : 'normal')} /> Wichtig</label>
+          <p>Keine Gastnamen oder Kontaktdaten – nur Zimmer und Sache.</p>
+        </div>}
         {!validInitials && <small>Kürzel mit 2–4 Buchstaben eingeben.</small>}
       </form>
 
       <section class="simple-handover">
-        <div><p class="eyebrow">Übergabe</p><h2>{date.split('-').reverse().join('.')} · {initials || '—'}</h2></div>
+        <div><p class="eyebrow">Übergabe</p><h2>{date.split('-').reverse().join('.')} · {SHIFT_LABELS[shift]} · {initials || '—'}</h2></div>
         <div class="handover-actions">
           <button type="button" onClick={deps.print}>Drucken</button>
           <button type="button" onClick={() => void deps.copy(brief).then(() => setMessage('Kopiert.'))}>Kopieren</button>

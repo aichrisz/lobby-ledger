@@ -1,7 +1,7 @@
 import type { ApiRequest, ApiResponse } from './_lib/http.js'
 import { createTask, deleteTask, listTasks, updateTaskStatus } from './_lib/ledger-store.js'
 import { SESSION_COOKIE, verifySessionToken } from './_lib/security.js'
-import { parseCreateTask, parseInitials, parseLedgerDate, parseTaskPatch } from './_lib/validation.js'
+import { parseCreateTask, parseInitials, parseLedgerDate, parseShift, parseTaskPatch } from './_lib/validation.js'
 
 function header(request: ApiRequest, name: string): string {
   const value = request.headers[name]
@@ -52,15 +52,17 @@ export default async function handler(request: ApiRequest, response: ApiResponse
   try {
     if (method === 'GET') {
       const date = parseLedgerDate(request.query.date)
-      response.status(200).json({ tasks: await listTasks(organizationId, date) })
+      const shift = parseShift(request.query.shift)
+      response.status(200).json({ tasks: await listTasks(organizationId, date, shift) })
       return
     }
     if (method === 'POST') {
       const body = request.body && typeof request.body === 'object' && !Array.isArray(request.body)
         ? request.body as Record<string, unknown> : {}
-      if (body.operation === 'read' && Object.keys(body).every((key) => ['operation', 'date'].includes(key))) {
+      if (body.operation === 'read' && Object.keys(body).every((key) => ['operation', 'date', 'shift'].includes(key))) {
         const date = parseLedgerDate(body.date)
-        response.status(200).json({ tasks: await listTasks(organizationId, date) })
+        const shift = parseShift(body.shift)
+        response.status(200).json({ tasks: await listTasks(organizationId, date, shift) })
         return
       }
       response.status(201).json({ task: await createTask(organizationId, parseCreateTask(request.body)) })
@@ -75,8 +77,10 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     if (method === 'DELETE') {
       const body = request.body && typeof request.body === 'object' && !Array.isArray(request.body)
         ? request.body as Record<string, unknown> : {}
-      if (Object.keys(body).some((key) => !['date', 'initials'].includes(key))) throw new Error('Unexpected fields')
-      const input = { date: parseLedgerDate(body.date), initials: parseInitials(body.initials) }
+      if (Object.keys(body).some((key) => !['date', 'shift', 'initials'].includes(key))) throw new Error('Unexpected fields')
+      const input = {
+        date: parseLedgerDate(body.date), shift: parseShift(body.shift), initials: parseInitials(body.initials),
+      }
       await deleteTask(organizationId, id, input)
       response.status(204).end()
       return

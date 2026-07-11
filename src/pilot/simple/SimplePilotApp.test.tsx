@@ -8,7 +8,9 @@ function api(overrides: Partial<LedgerApi> = {}): LedgerApi {
   return {
     unlock: vi.fn(async () => {}),
     list: vi.fn(async () => []),
-    create: vi.fn(async (_date, _initials, text) => ({ id: 'new', text, status: 'open' as const, createdAt: 'now' })),
+    create: vi.fn(async (_date, shift, _initials, task) => ({
+      id: 'new', ...task, status: 'open' as const, createdAt: 'now', createdShift: shift, doneAt: null,
+    })),
     setStatus: vi.fn(), delete: vi.fn(), ...overrides,
   }
 }
@@ -43,5 +45,52 @@ describe('SimplePilotApp', () => {
     expect(screen.getByRole('button', { name: 'Drucken' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Kopieren' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Als .txt' })).toBeTruthy()
+  })
+
+  test('loads and captures the selected shift with V1 task details', async () => {
+    const ledgerApi = api()
+    render(<SimplePilotApp deps={deps(ledgerApi)} />)
+    fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
+    await screen.findByRole('heading', { name: 'Aufgaben' })
+
+    fireEvent.click(screen.getByLabelText('Spät'))
+    await waitFor(() => expect(ledgerApi.list).toHaveBeenLastCalledWith('2026-07-11', 'spaet'))
+    fireEvent.input(screen.getByLabelText('Kürzel'), { target: { value: 'ab' } })
+    fireEvent.focus(screen.getByLabelText('Neue Aufgabe, keine Gastnamen'))
+    fireEvent.input(screen.getByLabelText('Neue Aufgabe, keine Gastnamen'), { target: { value: 'Minibar prüfen' } })
+    fireEvent.input(screen.getByLabelText('Zimmer oder Referenz'), { target: { value: '204' } })
+    fireEvent.click(screen.getByLabelText('Housekeeping'))
+    fireEvent.click(screen.getByLabelText('Wichtig'))
+    fireEvent.click(screen.getByRole('button', { name: 'Erfassen' }))
+
+    await waitFor(() => expect(ledgerApi.create).toHaveBeenCalledWith('2026-07-11', 'spaet', 'AB', {
+      text: 'Minibar prüfen', ref: '204', department: 'housekeeping', priority: 'wichtig',
+    }))
+  })
+
+  test('ignores a stale task-set response after the selected shift changes again', async () => {
+    let resolveSpaet!: (tasks: Awaited<ReturnType<LedgerApi['list']>>) => void
+    const spaet = new Promise<Awaited<ReturnType<LedgerApi['list']>>>((resolve) => { resolveSpaet = resolve })
+    const task = (id: string, text: string, shift: 'frueh' | 'spaet' | 'nacht') => ({
+      id, text, ref: '', department: 'front-office' as const, priority: 'normal' as const,
+      status: 'open' as const, createdAt: 'now', createdShift: shift, doneAt: null,
+    })
+    const ledgerApi = api({
+      list: vi.fn(async (_date, shift) => shift === 'spaet' ? spaet : shift === 'nacht' ? [task('n', 'Nacht-Aufgabe', 'nacht')] : []),
+    })
+    render(<SimplePilotApp deps={deps(ledgerApi)} />)
+    fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
+    await screen.findByRole('heading', { name: 'Aufgaben' })
+
+    fireEvent.click(screen.getByLabelText('Spät'))
+    await waitFor(() => expect(ledgerApi.list).toHaveBeenCalledWith('2026-07-11', 'spaet'))
+    fireEvent.click(screen.getByLabelText('Nacht'))
+    expect(await screen.findByText('Nacht-Aufgabe')).toBeTruthy()
+    resolveSpaet([task('s', 'Spät-Aufgabe', 'spaet')])
+
+    await waitFor(() => expect(screen.queryByText('Spät-Aufgabe')).toBeNull())
+    expect(screen.getByText('Nacht-Aufgabe')).toBeTruthy()
   })
 })

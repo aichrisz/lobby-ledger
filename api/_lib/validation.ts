@@ -24,6 +24,20 @@ export function parseInitials(value: unknown): string {
   return initials
 }
 
+export const LEDGER_SHIFTS = ['frueh', 'spaet', 'nacht'] as const
+export type LedgerShift = (typeof LEDGER_SHIFTS)[number]
+export const LEDGER_DEPARTMENTS = ['front-office', 'housekeeping', 'restaurant'] as const
+export type LedgerDepartment = (typeof LEDGER_DEPARTMENTS)[number]
+export const LEDGER_PRIORITIES = ['normal', 'wichtig'] as const
+export type LedgerPriority = (typeof LEDGER_PRIORITIES)[number]
+
+export function parseShift(value: unknown): LedgerShift {
+  if (typeof value !== 'string' || !LEDGER_SHIFTS.includes(value as LedgerShift)) {
+    throw new Error('Ungültige Schicht')
+  }
+  return value as LedgerShift
+}
+
 function parseText(value: unknown): string {
   if (typeof value !== 'string') throw new Error('Aufgabe fehlt')
   const text = value.trim()
@@ -34,19 +48,56 @@ function parseText(value: unknown): string {
   return text
 }
 
-export interface CreateTaskInput { date: string; initials: string; text: string }
+function parseRef(value: unknown): string {
+  if (value === undefined) return ''
+  if (typeof value !== 'string' || value.trim().length > 24) throw new Error('Referenz darf höchstens 24 Zeichen enthalten')
+  return value.trim()
+}
+
+function parseDepartment(value: unknown): LedgerDepartment {
+  if (value === undefined) return 'front-office'
+  if (typeof value !== 'string' || !LEDGER_DEPARTMENTS.includes(value as LedgerDepartment)) {
+    throw new Error('Ungültige Abteilung')
+  }
+  return value as LedgerDepartment
+}
+
+function parsePriority(value: unknown): LedgerPriority {
+  if (value === undefined) return 'normal'
+  if (typeof value !== 'string' || !LEDGER_PRIORITIES.includes(value as LedgerPriority)) {
+    throw new Error('Ungültige Priorität')
+  }
+  return value as LedgerPriority
+}
+
+export interface CreateTaskInput {
+  date: string
+  shift: LedgerShift
+  initials: string
+  text: string
+  ref: string
+  department: LedgerDepartment
+  priority: LedgerPriority
+}
 
 export function parseCreateTask(value: unknown): CreateTaskInput {
   const input = record(value)
-  exactFields(input, ['date', 'initials', 'text'])
-  return { date: parseLedgerDate(input.date), initials: parseInitials(input.initials), text: parseText(input.text) }
+  exactFields(input, ['date', 'shift', 'initials', 'text', 'ref', 'department', 'priority'])
+  return {
+    date: parseLedgerDate(input.date), shift: parseShift(input.shift),
+    initials: parseInitials(input.initials), text: parseText(input.text), ref: parseRef(input.ref),
+    department: parseDepartment(input.department), priority: parsePriority(input.priority),
+  }
 }
 
-export interface TaskPatchInput { date: string; initials: string; status: 'open' | 'done' }
+export interface TaskPatchInput { date: string; shift: LedgerShift; initials: string; status: 'open' | 'done' }
 
 export function parseTaskPatch(value: unknown): TaskPatchInput {
   const input = record(value)
-  exactFields(input, ['date', 'initials', 'status'])
+  exactFields(input, ['date', 'shift', 'initials', 'status'])
   if (input.status !== 'open' && input.status !== 'done') throw new Error('Ungültiger Status')
-  return { date: parseLedgerDate(input.date), initials: parseInitials(input.initials), status: input.status }
+  return {
+    date: parseLedgerDate(input.date), shift: parseShift(input.shift),
+    initials: parseInitials(input.initials), status: input.status,
+  }
 }
