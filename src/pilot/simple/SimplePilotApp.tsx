@@ -70,6 +70,8 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
   const [showDone, setShowDone] = useState(false)
   const [message, setMessage] = useState('')
   const loadSequence = useRef(0)
+  const selectedViewKey = useRef(`${date}:${shift}`)
+  selectedViewKey.current = `${date}:${shift}`
   const priorDocumentTheme = useRef<string | null | undefined>(undefined)
   const validInitials = /^[A-Z]{2,4}$/.test(initials)
 
@@ -148,10 +150,12 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
     event.preventDefault()
     const trimmed = text.trim()
     if (!validInitials || !trimmed) return
+    const requestKey = `${date}:${shift}`
     try {
       const created = await deps.api.create(date, shift, initials, {
         text: trimmed, ref: ref.trim(), department, priority,
       })
+      if (selectedViewKey.current !== requestKey) return
       setTasks((current) => [...current, created])
       setText('')
       setRef('')
@@ -159,29 +163,33 @@ export function SimplePilotApp({ deps }: { deps: SimplePilotDeps }) {
       setMessage('Gespeichert.')
     } catch (error) {
       if (error instanceof UnauthorizedError) setAuthenticated(false)
-      else setMessage(error instanceof Error ? error.message : 'Speichern fehlgeschlagen.')
+      else if (selectedViewKey.current === requestKey) setMessage(error instanceof Error ? error.message : 'Speichern fehlgeschlagen.')
     }
   }
 
   const setStatus = async (item: LedgerTask) => {
     if (!validInitials) { setMessage('Bitte zuerst Kürzel eingeben.'); return }
+    const requestKey = `${date}:${shift}`
     try {
       const updated = await deps.api.setStatus(item.id, date, shift, initials, item.status === 'open' ? 'done' : 'open')
+      if (selectedViewKey.current !== requestKey) return
       setTasks((current) => current.map((task) => task.id === updated.id ? updated : task))
     } catch (error) {
       if (error instanceof UnauthorizedError) setAuthenticated(false)
-      else setMessage('Status konnte nicht gespeichert werden.')
+      else if (selectedViewKey.current === requestKey) setMessage('Status konnte nicht gespeichert werden.')
     }
   }
 
   const remove = async (item: LedgerTask) => {
     if (!validInitials) { setMessage('Bitte zuerst Kürzel eingeben.'); return }
+    const requestKey = `${date}:${shift}`
     try {
       await deps.api.delete(item.id, date, shift, initials)
+      if (selectedViewKey.current !== requestKey) return
       setTasks((current) => current.filter((task) => task.id !== item.id))
     } catch (error) {
       if (error instanceof UnauthorizedError) setAuthenticated(false)
-      else setMessage('Löschen fehlgeschlagen.')
+      else if (selectedViewKey.current === requestKey) setMessage('Löschen fehlgeschlagen.')
     }
   }
 

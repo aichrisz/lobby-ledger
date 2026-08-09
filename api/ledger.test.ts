@@ -67,6 +67,22 @@ describe('/api/ledger', () => {
     expect(createTask).not.toHaveBeenCalled()
   })
 
+  test('rejects contact-like room references at the real API handler before storage', async () => {
+    const res = new ResponseStub()
+    await handler({
+      method: 'POST',
+      headers: { cookie: cookie(), 'sec-fetch-site': 'same-origin', 'x-lobby-ledger': '1' },
+      body: {
+        date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'Schlüssel prüfen',
+        ref: 'kontakt@example.invalid', department: 'front-office', priority: 'normal',
+      },
+      query: {},
+    }, res)
+    expect(res.statusCode).toBe(400)
+    expect(res.payload).toEqual({ error: 'Kontaktdaten gehören nicht in Aufgaben' })
+    expect(createTask).not.toHaveBeenCalled()
+  })
+
   test('supports a non-cacheable POST read for clients migrating off the legacy service worker', async () => {
     listTasks.mockResolvedValue([])
     const res = new ResponseStub()

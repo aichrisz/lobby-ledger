@@ -34,6 +34,15 @@ describe('ledger API validation', () => {
     expect(() => parseCreateTask({ date: '2026-07-11', shift: 'mittag', initials: 'AB', text: 'Test' })).toThrow('Schicht')
   })
 
+  test('rejects contact-like data in room references as well as task text', () => {
+    expect(() => parseCreateTask({
+      date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'Rückruf', ref: '0176 12345678',
+    })).toThrow('Kontaktdaten')
+    expect(() => parseCreateTask({
+      date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'Rückruf kontakt@example.invalid', ref: '',
+    })).toThrow('Kontaktdaten')
+  })
+
   test('rejects contact-like task content and unexpected patch fields', () => {
     expect(() => parseCreateTask({ date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'mail@example.test' }))
       .toThrow('Kontaktdaten')

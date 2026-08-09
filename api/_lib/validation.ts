@@ -38,11 +38,15 @@ export function parseShift(value: unknown): LedgerShift {
   return value as LedgerShift
 }
 
+function containsContactData(value: string): boolean {
+  return /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/.test(value) || /\+?\d[\d\s/.\-]{7,}\d/.test(value)
+}
+
 function parseText(value: unknown): string {
   if (typeof value !== 'string') throw new Error('Aufgabe fehlt')
   const text = value.trim()
   if (text.length < 1 || text.length > 200) throw new Error('Aufgabe muss 1–200 Zeichen enthalten')
-  if (/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/.test(text) || /\+?\d[\d\s/.\-]{7,}\d/.test(text)) {
+  if (containsContactData(text)) {
     throw new Error('Kontaktdaten gehören nicht in Aufgaben')
   }
   return text
@@ -51,7 +55,9 @@ function parseText(value: unknown): string {
 function parseRef(value: unknown): string {
   if (value === undefined) return ''
   if (typeof value !== 'string' || value.trim().length > 24) throw new Error('Referenz darf höchstens 24 Zeichen enthalten')
-  return value.trim()
+  const reference = value.trim()
+  if (containsContactData(reference)) throw new Error('Kontaktdaten gehören nicht in Aufgaben')
+  return reference
 }
 
 function parseDepartment(value: unknown): LedgerDepartment {

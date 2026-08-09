@@ -15,6 +15,11 @@ export default async function handler(request: ApiRequest, response: ApiResponse
     response.status(403).json({ error: 'Anfrage abgelehnt' })
     return
   }
+  const marker = request.headers['x-lobby-ledger']
+  if ((Array.isArray(marker) ? marker[0] : marker) !== '1') {
+    response.status(403).json({ error: 'Anfrage abgelehnt' })
+    return
+  }
   const configuredPin = process.env.PILOT_PIN
   const secret = process.env.PILOT_SESSION_SECRET
   if (!configuredPin || !secret || secret.length < 32) {

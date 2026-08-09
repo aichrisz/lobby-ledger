@@ -23,7 +23,7 @@ describe('POST /api/pin', () => {
     process.env.PILOT_PIN = '4815'
     process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
     const res = new ResponseStub()
-    await handler({ method: 'POST', headers: {}, body: { pin: '4815' }, query: {} }, res)
+    await handler({ method: 'POST', headers: { 'x-lobby-ledger': '1' }, body: { pin: '4815' }, query: {} }, res)
     expect(res.statusCode).toBe(200)
     expect(res.headers.get('set-cookie')).toContain('HttpOnly')
     expect(res.payload).toEqual({ ok: true })
@@ -33,7 +33,7 @@ describe('POST /api/pin', () => {
     process.env.PILOT_PIN = ' 4815\n'
     process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
     const res = new ResponseStub()
-    await handler({ method: 'POST', headers: {}, body: { pin: '4815' }, query: {} }, res)
+    await handler({ method: 'POST', headers: { 'x-lobby-ledger': '1' }, body: { pin: '4815' }, query: {} }, res)
     expect(res.statusCode).toBe(200)
   })
 
@@ -41,9 +41,27 @@ describe('POST /api/pin', () => {
     process.env.PILOT_PIN = '4815'
     process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
     const res = new ResponseStub()
-    await handler({ method: 'POST', headers: {}, body: { pin: '0000' }, query: {} }, res)
+    await handler({ method: 'POST', headers: { 'x-lobby-ledger': '1' }, body: { pin: '0000' }, query: {} }, res)
     expect(res.statusCode).toBe(401)
     expect(res.headers.has('set-cookie')).toBe(false)
     expect(res.payload).toEqual({ error: 'PIN ungültig' })
+  })
+
+  test('rejects PIN unlock without the pilot request marker', async () => {
+    process.env.PILOT_PIN = '4815'
+    process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
+    const res = new ResponseStub()
+    await handler({ method: 'POST', headers: {}, body: { pin: '4815' }, query: {} }, res)
+    expect(res.statusCode).toBe(403)
+    expect(res.headers.has('set-cookie')).toBe(false)
+  })
+
+  test('rejects PIN unlock with an incorrect pilot request marker', async () => {
+    process.env.PILOT_PIN = '4815'
+    process.env.PILOT_SESSION_SECRET = 'a-session-secret-that-is-at-least-32-bytes'
+    const res = new ResponseStub()
+    await handler({ method: 'POST', headers: { 'x-lobby-ledger': '0' }, body: { pin: '4815' }, query: {} }, res)
+    expect(res.statusCode).toBe(403)
+    expect(res.headers.has('set-cookie')).toBe(false)
   })
 })

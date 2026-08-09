@@ -16,7 +16,7 @@ function api(overrides: Partial<LedgerApi> = {}): LedgerApi {
 }
 
 function deps(apiValue: LedgerApi, storage = fakeStorage()): SimplePilotDeps {
-  return { api: apiValue, storage, now: () => new Date('2026-07-11T09:00:00Z'), print: vi.fn(), copy: vi.fn(), download: vi.fn() }
+  return { api: apiValue, storage, now: () => new Date(2026, 6, 11, 9, 0, 0), print: vi.fn(), copy: vi.fn(), download: vi.fn() }
 }
 
 type MediaChangeListener = (event: MediaQueryListEvent) => void
@@ -75,6 +75,7 @@ describe('SimplePilotApp', () => {
     fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '4815' } })
     fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
     expect(await screen.findByRole('heading', { name: 'Aufgaben' })).toBeTruthy()
+    expect(ledgerApi.list).toHaveBeenCalledWith('2026-07-11', 'frueh')
     fireEvent.input(screen.getByLabelText('Kürzel'), { target: { value: 'ab' } })
     await waitFor(() => expect(storage.getItem('lobby-ledger:initials')).toBe('AB'))
     expect(screen.getByDisplayValue('2026-07-11')).toBeTruthy()
@@ -216,6 +217,37 @@ describe('SimplePilotApp', () => {
     await waitFor(() => expect(ledgerApi.create).toHaveBeenCalledWith('2026-07-11', 'spaet', 'AB', {
       text: 'Minibar prüfen', ref: '204', department: 'housekeeping', priority: 'wichtig',
     }))
+  })
+
+  test('does not apply a delayed create after the selected shift changes', async () => {
+    let resolveCreate!: (task: Awaited<ReturnType<LedgerApi['create']>>) => void
+    const createPromise = new Promise<Awaited<ReturnType<LedgerApi['create']>>>((resolve) => { resolveCreate = resolve })
+    const task = (id: string, text: string, createdShift: 'frueh' | 'spaet') => ({
+      id, text, ref: '', department: 'front-office' as const, priority: 'normal' as const,
+      status: 'open' as const, createdAt: 'now', createdShift, doneAt: null,
+    })
+    const ledgerApi = api({
+      list: vi.fn(async (_date, selectedShift) => selectedShift === 'spaet' ? [task('spaet', 'Spät-Aufgabe', 'spaet')] : []),
+      create: vi.fn(() => createPromise),
+    })
+    render(<SimplePilotApp deps={deps(ledgerApi)} />)
+    fireEvent.input(await screen.findByLabelText('PIN'), { target: { value: '4815' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Öffnen' }))
+    await screen.findByRole('heading', { name: 'Aufgaben' })
+    fireEvent.input(screen.getByLabelText('Kürzel'), { target: { value: 'ab' } })
+    fireEvent.focus(screen.getByLabelText('Neue Aufgabe, keine Gastnamen'))
+    fireEvent.input(screen.getByLabelText('Neue Aufgabe, keine Gastnamen'), { target: { value: 'Früh-Aufgabe' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Erfassen' }))
+    await waitFor(() => expect(ledgerApi.create).toHaveBeenCalledWith('2026-07-11', 'frueh', 'AB', {
+      text: 'Früh-Aufgabe', ref: '', department: 'front-office', priority: 'normal',
+    }))
+
+    fireEvent.click(screen.getByLabelText('Spät'))
+    expect(await screen.findByText('Spät-Aufgabe')).toBeTruthy()
+    resolveCreate(task('created', 'Früh-Aufgabe', 'frueh'))
+
+    await waitFor(() => expect(screen.queryByText('Früh-Aufgabe')).toBeNull())
+    expect(screen.queryByText('Gespeichert.')).toBeNull()
   })
 
   test('ignores a stale task-set response after the selected shift changes again', async () => {
