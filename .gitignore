@@ -9,3 +9,4 @@ dist-pilot/
 supabase/.temp/
 .vercel
 .env*
+.worktrees/
