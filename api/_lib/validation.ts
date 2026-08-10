@@ -39,7 +39,7 @@ export function parseShift(value: unknown): LedgerShift {
 }
 
 function containsContactData(value: string): boolean {
-  return /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/.test(value) || /\+?\d[\d\s/.\-]{7,}\d/.test(value)
+  return /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/.test(value) || /\+?(?:\d[\s/.\-]*){8}\d/.test(value)
 }
 
 function parseText(value: unknown): string {

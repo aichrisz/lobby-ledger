@@ -29,6 +29,11 @@ describe('ledger API validation', () => {
       .toThrow('Abteilung')
   })
 
+  test.each(['Rechnung 2026-4711', 'INV-2026-4711', '2026-07-11'])
+    ('accepts ordinary reference %s', (ref) => {
+      expect(parseCreateTask({ date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'Test', ref }).ref).toBe(ref)
+    })
+
   test('requires one of the three source shifts', () => {
     expect(() => parseCreateTask({ date: '2026-07-11', initials: 'AB', text: 'Test' })).toThrow('Schicht')
     expect(() => parseCreateTask({ date: '2026-07-11', shift: 'mittag', initials: 'AB', text: 'Test' })).toThrow('Schicht')
@@ -42,6 +47,12 @@ describe('ledger API validation', () => {
       date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'Rückruf kontakt@example.invalid', ref: '',
     })).toThrow('Kontaktdaten')
   })
+
+  test.each(['0171/2345678', '+49 171 2345678', '123456789'])
+    ('rejects phone-like reference %s', (ref) => {
+      expect(() => parseCreateTask({ date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'Test', ref }))
+        .toThrow('Kontaktdaten')
+    })
 
   test('rejects contact-like task content and unexpected patch fields', () => {
     expect(() => parseCreateTask({ date: '2026-07-11', shift: 'frueh', initials: 'AB', text: 'mail@example.test' }))
