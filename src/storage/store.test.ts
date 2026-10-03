@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest'
+import { env } from 'node:process'
 import type { Task } from '../domain/task'
+import { buildBrief } from '../domain/brief'
 import { fakeStorage, failingStorage } from '../test/fake-storage'
 import {
   CURRENT_SCHEMA, DONE_RETENTION_DAYS, RECOVERY_KEY, STORAGE_KEY,
@@ -12,6 +14,10 @@ const task = (o: Partial<Task> = {}): Task => ({
   priority: 'normal', status: 'open', createdAt: NOW.toISOString(),
   createdShift: 'frueh', doneAt: null, ...o,
 })
+const snapshotFor = (tasks: Task[]) => ({
+  brief: buildBrief(tasks, 'frueh', NOW),
+  receivedAt: null,
+})
 
 describe('loadStore', () => {
   test('fresh device → empty store, not recovered', () => {
@@ -19,9 +25,90 @@ describe('loadStore', () => {
   })
   test('round-trips a saved store', () => {
     const s = fakeStorage()
-    const data = { schema: CURRENT_SCHEMA, tasks: [task()], shiftOverride: null }
+    const savedTask = task()
+    const data = {
+      schema: CURRENT_SCHEMA, tasks: [savedTask], shiftOverride: null,
+      handoverSnapshot: snapshotFor([savedTask]),
+    }
     expect(saveStore(s, data)).toBe(true)
     expect(loadStore(s, NOW)).toEqual({ data, recovered: false })
+  })
+  test('preserves completed snapshot membership and receipt across host timezone changes', () => {
+    const originalTimezone = env.TZ
+    try {
+      env.TZ = 'Europe/Berlin'
+      const generatedAt = new Date(2026, 6, 10, 9, 0)
+      const completedAt = (hour: number, minute: number) =>
+        new Date(2026, 6, 10, hour, minute).toISOString()
+      const first = task({ id: 'berlin-0630', status: 'done', doneAt: completedAt(6, 30) })
+      const second = task({ id: 'berlin-0715', status: 'done', doneAt: completedAt(7, 15) })
+      const brief = buildBrief([first, second], 'frueh', generatedAt)
+      expect(brief.doneThisShift).toEqual([second, first])
+      const storedOrder = [first, second]
+      const snapshot = {
+        brief: {
+          ...brief,
+          doneThisShift: storedOrder,
+          counts: { ...brief.counts, doneThisShift: 99 },
+        },
+        receivedAt: new Date(2026, 6, 10, 9, 5).toISOString(),
+      }
+      const storage = fakeStorage()
+      expect(saveStore(storage, {
+        schema: CURRENT_SCHEMA, tasks: [first, second], shiftOverride: null,
+        handoverSnapshot: snapshot,
+      })).toBe(true)
+
+      env.TZ = 'Europe/London'
+      expect(new Date(generatedAt).getHours()).toBe(8)
+      const loaded = loadStore(storage, new Date(2026, 6, 10, 10, 0))
+      expect(loaded.data.handoverSnapshot).toEqual({
+        brief: {
+          ...brief,
+          doneThisShift: storedOrder,
+          counts: { ...brief.counts, doneThisShift: 2 },
+        },
+        receivedAt: snapshot.receivedAt,
+      })
+    } finally {
+      if (originalTimezone === undefined) delete env.TZ
+      else env.TZ = originalTimezone
+    }
+  })
+  test('loads the previous schema-1 envelope without losing tasks or reporting recovery', () => {
+    const good = task()
+    const s = fakeStorage({
+      [STORAGE_KEY]: JSON.stringify({ schema: 1, tasks: [good], shiftOverride: null }),
+    })
+    const loaded = loadStore(s, NOW)
+    expect(loaded.data.tasks).toEqual([good])
+    expect(loaded.data.handoverSnapshot).toBeNull()
+    expect(loaded.recovered).toBe(false)
+  })
+  test('drops a malformed handover snapshot while preserving valid tasks', () => {
+    const good = task()
+    const s = fakeStorage({
+      [STORAGE_KEY]: JSON.stringify({
+        schema: 1, tasks: [good], shiftOverride: null,
+        handoverSnapshot: { brief: { generatedAt: 'invalid' }, receivedAt: null },
+      }),
+    })
+    const loaded = loadStore(s, NOW)
+    expect(loaded.data.tasks).toEqual([good])
+    expect(loaded.data.handoverSnapshot).toBeNull()
+    expect(loaded.recovered).toBe(false)
+  })
+  test('recomputes saved brief counts from validated snapshot tasks', () => {
+    const important = task({ priority: 'wichtig' })
+    const snapshot = snapshotFor([important])
+    snapshot.brief.counts = { open: 900, wichtig: 0, doneThisShift: 44 }
+    const s = fakeStorage({
+      [STORAGE_KEY]: JSON.stringify({
+        schema: 1, tasks: [], shiftOverride: null, handoverSnapshot: snapshot,
+      }),
+    })
+    expect(loadStore(s, NOW).data.handoverSnapshot?.brief.counts)
+      .toEqual({ open: 1, wichtig: 1, doneThisShift: 0 })
   })
   test('unparseable JSON → stash to recovery key, reset, recovered=true', () => {
     const s = fakeStorage({ [STORAGE_KEY]: '{broken' })

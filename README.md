@@ -17,6 +17,7 @@ Lobby Ledger helps a reception team capture operational tasks during Früh, Spä
 - Früh / Spät / Nacht context with automatic night theme
 - Task completion, delete + undo, and local recovery safeguards
 - Department-grouped handover brief
+- One replaceable local handover snapshot with an optional receipt timestamp; it is not staff identity evidence
 - Clipboard copy, `.txt` download, and A4-friendly print view
 - Installable/offline-capable PWA after the initial online load
 

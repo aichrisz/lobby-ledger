@@ -37,3 +37,12 @@ npm test; npm run typecheck; npm run build; full Playwright mobile + desktop on 
 Update README and CLAUDE.md narrowly to document new stored field/behavior. No dependency, pilot, workflow, credential or deploy changes. Existing npm audit reports 6 vulnerabilities (3 moderate, 3 high); disclose, do not widen scope silently.
 
 Worker leaves uncommitted source changes and returns exact diff, RED/GREEN evidence, full verification and screenshot paths. Parent reviews/reruns before feature commit and push to feat/local-handover-receipt. Never push main (auto-deploy). Never push or modify pilot/v2-foundation.
+
+## Acceptance evidence
+
+- Hermes Luna xhigh implemented; Sol reviewed the final diff and independently reran 108 unit/component tests, typecheck, build and all 14 mobile/desktop E2E tests successfully.
+- Sol requested frozen shift/count labels in the saved region; component RED → GREEN confirmed the correction.
+- Optional Hermes Astra xhigh read-only review found timezone-dependent snapshot loss. Luna added a Berlin → London round-trip RED → GREEN regression; parser now preserves validated completed snapshot membership/order and recomputes its count without temporal reselection. Sol verified the correction and reran all gates.
+- Browser journey proves local receipt/reload/replacement, task status separation, offline operation, no cross-origin requests or console errors, Axe accessibility and 44px controls at 390×844. Mobile before/after receipt screenshots were visually inspected by Sol.
+- README documents the stored snapshot. CLAUDE.md remains unchanged because its protected-write approval timed out; the new storage-field decision is recorded in this approved plan instead. No retry or approval bypass.
+- No added dependencies, accounts, team sync, network API, guest personal-data fields, pilot changes or deployment. Existing dependency audit findings remain outside this feature slice (baseline: 3 moderate, 3 high).

@@ -11,6 +11,7 @@ export interface Brief {
   doneThisShift: Task[]
   counts: { open: number; wichtig: number; doneThisShift: number }
 }
+export interface HandoverSnapshot { brief: Brief; receivedAt: string | null }
 
 const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'] as const
 const pad = (v: number) => String(v).padStart(2, '0')

@@ -62,7 +62,11 @@ main { padding: var(--space-4); padding-bottom: 148px; }
 .brief-head { border-bottom: 2px solid var(--ink); padding-bottom: var(--space-3); margin-bottom: var(--space-4); }
 .brief-sub { margin: 0; font-weight: 600; }
 .brief-counts { margin: var(--space-1) 0 0; color: var(--ink-soft); font-size: var(--text-sm); }
+.brief-export-note { margin: var(--space-2) 0 0; color: var(--ink-soft); font-size: var(--text-sm); }
 .brief-clear { font-family: var(--font-display); font-size: var(--text-lg); color: var(--ink-soft); }
+.saved-snapshot { margin-top: var(--space-6); border-top: 2px solid var(--hairline); padding-top: var(--space-4); }
+.saved-snapshot > h2 { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 550; margin: 0 0 var(--space-2); }
+.snapshot-note, .snapshot-meta { margin: var(--space-2) 0; color: var(--ink-soft); font-size: var(--text-sm); }
 .brief-section { margin-bottom: var(--space-5); }
 .brief-section h2 { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 550; margin: 0 0 var(--space-2); border-bottom: 1px solid var(--hairline); padding-bottom: var(--space-1); }
 .brief-section ul { list-style: none; margin: 0; padding: 0; }
@@ -75,6 +79,7 @@ main { padding: var(--space-4); padding-bottom: 148px; }
 .brief-actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap; }
 .brief-actions button { min-height: var(--tap); padding: 0 var(--space-4); border: 1px solid var(--accent); border-radius: var(--radius); background: transparent; color: var(--accent); font-weight: 600; }
 .brief-actions button:first-child { background: var(--accent); color: var(--accent-ink); }
+.brief-actions button:disabled { border-color: var(--hairline); background: var(--paper-raised); color: var(--ink-soft); }
 .copy-fallback { margin-top: var(--space-4); padding: var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--paper-raised); }
 .copy-fallback textarea { width: 100%; font: inherit; font-size: var(--text-base); background: var(--paper); color: var(--ink); border: 1px solid var(--hairline); border-radius: var(--radius); padding: var(--space-2); }
 .copy-fallback button { min-height: var(--tap); padding: 0 var(--space-4); border: 1px solid var(--hairline); border-radius: var(--radius); background: transparent; margin-top: var(--space-2); }

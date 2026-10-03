@@ -1,6 +1,7 @@
 import { signal, type Signal } from '@preact/signals'
 import type { NewTaskInput, Shift, Status, Task } from '../domain/task'
 import { createTask } from '../domain/task'
+import { buildBrief, type HandoverSnapshot } from '../domain/brief'
 import { resolveShift, type ShiftOverride } from '../domain/shift'
 import { CURRENT_SCHEMA, loadStore, saveStore, wipeStore, type StorageLike } from '../storage/store'
 
@@ -9,6 +10,7 @@ export interface LedgerApp {
   shift: Signal<Shift>
   recovered: Signal<boolean>
   saveFailed: Signal<boolean>
+  handoverSnapshot: Signal<HandoverSnapshot | null>
   lastDeleted: Signal<Task | null>
   now(): Date
   addTask(input: NewTaskInput): Task | null
@@ -17,6 +19,8 @@ export interface LedgerApp {
   undoRemove(): void
   setShift(shift: Shift): void
   refreshShift(): void
+  createSnapshot(): boolean
+  receiveSnapshot(): boolean
   wipe(): void
 }
 
@@ -28,18 +32,22 @@ export function createLedgerApp(storage: StorageLike, now: () => Date = () => ne
   const shift = signal(resolveShift(now(), override))
   const recovered = signal(loaded.recovered)
   const saveFailed = signal(false)
+  const handoverSnapshot = signal(loaded.data.handoverSnapshot)
   const lastDeleted = signal<Task | null>(null)
 
-  const persist = () => {
-    saveFailed.value = !saveStore(storage, {
+  const persist = (snapshot = handoverSnapshot.value): boolean => {
+    const saved = saveStore(storage, {
       schema: CURRENT_SCHEMA,
       tasks: tasks.value,
       shiftOverride: override,
+      handoverSnapshot: snapshot,
     })
+    saveFailed.value = !saved
+    return saved
   }
 
   return {
-    tasks, shift, recovered, saveFailed, lastDeleted, now,
+    tasks, shift, recovered, saveFailed, handoverSnapshot, lastDeleted, now,
     addTask(input) {
       const task = createTask(input, now(), shift.value)
       if (task) {
@@ -73,10 +81,28 @@ export function createLedgerApp(storage: StorageLike, now: () => Date = () => ne
     refreshShift() {
       shift.value = resolveShift(now(), override)
     },
+    createSnapshot() {
+      const snapshot: HandoverSnapshot = {
+        brief: buildBrief(tasks.value.map((task) => ({ ...task })), shift.value, now()),
+        receivedAt: null,
+      }
+      if (!persist(snapshot)) return false
+      handoverSnapshot.value = snapshot
+      return true
+    },
+    receiveSnapshot() {
+      const current = handoverSnapshot.value
+      if (!current || current.receivedAt !== null) return false
+      const snapshot = { ...current, receivedAt: now().toISOString() }
+      if (!persist(snapshot)) return false
+      handoverSnapshot.value = snapshot
+      return true
+    },
     wipe() {
       wipeStore(storage)
       override = null
       tasks.value = []
+      handoverSnapshot.value = null
       shift.value = resolveShift(now(), null)
       lastDeleted.value = null
       recovered.value = false

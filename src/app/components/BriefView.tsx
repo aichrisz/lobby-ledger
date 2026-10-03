@@ -10,6 +10,7 @@ import { copyText, downloadText } from '../export'
 export function BriefView({ app }: { app: LedgerApp }) {
   const now = app.now()
   const brief = buildBrief(app.tasks.value, app.shift.value, now)
+  const snapshot = app.handoverSnapshot.value
   const copied = useSignal<'idle' | 'ok' | 'fail'>('idle')
   const text = formatBriefText(brief)
   useEffect(() => {
@@ -36,7 +37,58 @@ export function BriefView({ app }: { app: LedgerApp }) {
           </button>
           <button onClick={() => downloadText(briefFilename(brief), text)}>Als .txt</button>
         </div>
+        <p class="brief-export-note no-print">
+          Drucken, Kopieren und .txt beziehen sich auf die aktuelle Übergabe.
+        </p>
+        <div class="brief-actions no-print">
+          <button onClick={() => app.createSnapshot()}>
+            {snapshot ? 'Übergabe ersetzen' : 'Übergabe lokal sichern'}
+          </button>
+        </div>
       </header>
+      <BriefBody brief={brief} now={now} />
+      <section class="saved-snapshot no-print" aria-label="Gespeicherte Übergabe">
+        <h2>Gespeicherte Momentaufnahme</h2>
+        <p class="snapshot-note">
+          Nur in diesem Browser gespeichert. Kein Nachweis, wer die Übergabe erhalten hat.
+        </p>
+        {snapshot ? (
+          <>
+            <p class="snapshot-meta">
+              Gesichert am <time dateTime={snapshot.brief.generatedAt}>
+                {formatDateShort(snapshot.brief.generatedAt)} · {formatTimeShort(snapshot.brief.generatedAt)}
+              </time>
+            </p>
+            <p class="brief-sub">
+              {SHIFT_LABELS[snapshot.brief.fromShift]} → {SHIFT_LABELS[snapshot.brief.toShift]}
+            </p>
+            <p class="brief-counts nums">
+              {snapshot.brief.counts.open} offen · {snapshot.brief.counts.wichtig} wichtig · {snapshot.brief.counts.doneThisShift} erledigt diese Schicht
+            </p>
+            <p class="snapshot-meta" role="status">
+              {snapshot.receivedAt
+                ? `Erhalten am ${formatDateShort(snapshot.receivedAt)} · ${formatTimeShort(snapshot.receivedAt)}`
+                : 'Noch nicht als erhalten markiert.'}
+            </p>
+            <div class="brief-actions">
+              <button disabled={snapshot.receivedAt !== null} onClick={() => app.receiveSnapshot()}>
+                Übergabe erhalten
+              </button>
+            </div>
+            <BriefBody brief={snapshot.brief} now={new Date(snapshot.brief.generatedAt)} />
+          </>
+        ) : (
+          <p class="snapshot-meta">Noch keine lokale Übergabe gespeichert.</p>
+        )}
+      </section>
+      {copied.value === 'fail' && <CopyFallback text={text} onClose={() => (copied.value = 'idle')} />}
+    </article>
+  )
+}
+
+function BriefBody({ brief, now }: { brief: ReturnType<typeof buildBrief>; now: Date }) {
+  return (
+    <>
       {brief.sections.length === 0 ? (
         <p class="brief-clear">Keine offenen Aufgaben. Gute Übergabe!</p>
       ) : (
@@ -69,8 +121,7 @@ export function BriefView({ app }: { app: LedgerApp }) {
           </ul>
         </section>
       )}
-      {copied.value === 'fail' && <CopyFallback text={text} onClose={() => (copied.value = 'idle')} />}
-    </article>
+    </>
   )
 }
 

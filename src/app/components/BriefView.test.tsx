@@ -1,5 +1,5 @@
 import { describe, expect, test, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/preact'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/preact'
 import { fakeStorage } from '../../test/fake-storage'
 import { createLedgerApp } from '../state'
 import { BriefView } from './BriefView'
@@ -21,6 +21,48 @@ describe('BriefView', () => {
     render(<BriefView app={app} />)
     expect(screen.getByRole('heading', { name: 'Housekeeping' })).toBeTruthy()
     expect(screen.getByText('310')).toBeTruthy()
+  })
+  test('saves a separate local snapshot and records receipt without completing tasks', () => {
+    const app = mkApp()
+    const task = app.addTask({ text: 'Wasserkocher defekt', ref: '204' })!
+    render(<BriefView app={app} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Übergabe lokal sichern' }))
+
+    const saved = screen.getByRole('region', { name: 'Gespeicherte Übergabe' })
+    expect(within(saved).getByText('Wasserkocher defekt')).toBeTruthy()
+    expect(within(saved).getByText(/Nur in diesem Browser gespeichert/)).toBeTruthy()
+    expect(app.tasks.value.find((item) => item.id === task.id)?.status).toBe('open')
+
+    const receipt = screen.getByRole('button', { name: 'Übergabe erhalten' })
+    fireEvent.click(receipt)
+    expect(app.handoverSnapshot.value?.receivedAt).toBe(new Date(2026, 6, 10, 13, 30).toISOString())
+    expect((receipt as HTMLButtonElement).disabled).toBe(true)
+    expect(within(saved).getByText(/Erhalten am/)).toBeTruthy()
+    expect(app.tasks.value.find((item) => item.id === task.id)?.status).toBe('open')
+  })
+  test('saved transition and counts stay frozen across live shift and task changes', () => {
+    const app = mkApp()
+    const task = app.addTask({ text: 'Wasserkocher prüfen', priority: 'wichtig' })!
+    render(<BriefView app={app} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Übergabe lokal sichern' }))
+
+    act(() => {
+      app.setShift('spaet')
+      app.setStatus(task.id, 'done')
+      app.addTask({ text: 'Neue Aufgabe' })
+    })
+
+    const saved = screen.getByRole('region', { name: 'Gespeicherte Übergabe' })
+    expect(screen.getByText(/Spät → Nacht/)).toBeTruthy()
+    expect(within(saved).getByText(/Früh → Spät/)).toBeTruthy()
+    expect(within(saved).getByText(/1 offen · 1 wichtig · 0 erledigt diese Schicht/)).toBeTruthy()
+  })
+  test('allows an empty snapshot and labels replacement explicitly', () => {
+    render(<BriefView app={mkApp()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Übergabe lokal sichern' }))
+    const saved = screen.getByRole('region', { name: 'Gespeicherte Übergabe' })
+    expect(within(saved).getByText('Keine offenen Aufgaben. Gute Übergabe!')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Übergabe ersetzen' })).toBeTruthy()
   })
   test('all-clear message when nothing is open', () => {
     render(<BriefView app={mkApp()} />)
