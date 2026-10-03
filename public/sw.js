@@ -1,4 +1,4 @@
-const CACHE = 'lobby-ledger-v1' // bump on every release
+const CACHE = 'lobby-ledger-v2' // bump on every release
 
 // Precache the app shell AND the hashed assets it references. The first page
 // load is not controlled by this worker, so runtime caching alone would leave
